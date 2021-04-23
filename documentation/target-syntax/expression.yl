@@ -1,0 +1,54 @@
+import { Identifier } from './utils/variables.yl';
+
+decl operands => choose('+', '-', '*', '/');
+decl updateOperands => choose('++', '--');
+decl unaryOperands => choose('+', '-', '!');
+
+nodes Value {
+    node String {
+        // once quote evaluated one path (" or ') it can't be changed
+        const quote => choose('"', "'");
+        parser() => quote . value: loop(/./, '\\') . quote;
+    }
+
+    node Number {
+        parser() => value: /\d+(\.\d+)/;
+    }
+}
+
+nodes Expression {
+    link Value;
+
+    node Member {
+        parser() => object: Expression() . "." . property: Identifier();
+    }
+
+    node Call {
+        parser() => callee: Expression() . "(" . arguments: delimited(Expression, .",".) . ")";
+    }
+
+    node Binary {
+        parser() => left: Expression() . operator: operands . right: Expression();
+    }
+
+    node Update {
+        // keys with $ are just internal captures
+
+        parser() => choose(
+            (prefix: true) => operator: updateOperands() $ts123: . argument: Identifier();
+            (prefix: false) => argument: Identifier() $ts123: . operator: updateOperands();
+        );
+        // example: { type: "UpdateExpressionNode", prefix: "true", operator: "++", argument: {...} }
+
+        // print a warning if there's a whitespace
+        case($ts123) {
+            warn("TS123", "Remove whitespace between '${operand}' and expression);
+        }
+    }
+
+    node Unary {
+        parser() => (prefix: true) operator: unaryOperands() . argument: Expression();
+    }
+
+}
+

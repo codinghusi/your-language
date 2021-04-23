@@ -1,0 +1,4 @@
+
+node Name implements Identifier {
+    parser() => value: /[_a-zA-Z]\w/;
+}
