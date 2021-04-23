@@ -1,4 +1,4 @@
-import { Identifier } from './utils/variables.yl';
+import { Name } from './name.yl';
 
 decl operands => choose('+', '-', '*', '/');
 decl updateOperands => choose('++', '--');
@@ -20,7 +20,7 @@ nodes Expression {
     link Value;
 
     node Member {
-        parser() => object: Expression() . "." . property: Identifier();
+        parser() => object: Expression() . "." . property: Name();
     }
 
     node Call {
@@ -35,8 +35,8 @@ nodes Expression {
         // keys with $ are just internal captures
 
         parser() => choose(
-            (prefix: true) => operator: updateOperands() $ts123: . argument: Identifier();
-            (prefix: false) => argument: Identifier() $ts123: . operator: updateOperands();
+            (prefix: true) => operator: updateOperands() $ts123: . argument: Name();
+            (prefix: false) => argument: Name() $ts123: . operator: updateOperands();
         );
         // example: { type: "UpdateExpressionNode", prefix: "true", operator: "++", argument: {...} }
 
