@@ -27,8 +27,8 @@ node YourNodesName {
 }
 ```
 Read more below about the parsing syntax.
-## Cases
-### Error handling
+### Cases
+#### Error handling
 ```yl
 node Identifier {
     describe() => value: /\w+/;
@@ -46,12 +46,12 @@ case (condition) {
 }
 ```
 
-### more
+#### more
 Like error(...) there's warning(...). The function help(...) provides info to the programmer, how he could fix the issue.
 TODO: how to provide details for analysis?
 
 
-## Parsing Syntax
+### Parsing Syntax
 The syntax is based on different patterns joined by whitespace operators.
 So here's an example that parses the code `let foo = "bar"`:
 ```yl
@@ -71,25 +71,32 @@ And here's a step by step explaination what it does:
 | `.`                  | Allow a whitespace                                                                                      | Whitespace operands |
 | `init: Expression()` | Parse an expression (also defined as a node) and store its value as "init"                              |                     |
 
-### Whitespace operators
-This ones really subject to change, but for now it's this:
-| kind of whitespace     | operator |
-|------------------------|---|
-| no whitespace allowed  | ~ |
-| whitespace required    | - |
-| whitespace is optional | . |
+#### Whitespace operators
+| whitespace  | following optional | operator |
+|-------------|--------------------|----------|
+| optional    | no                 | ->       |
+| required    | no                 | ->>      |
+| not allowed | no                 | -!>      |
+| optional    | yes                | ~>       |
+| required    | yes                | ~>>      |
+| not allowed | yes                | ~!>      |
 
-### StringEater
+
+#### StringEater
 Define a string that's expected
 Example:
 `"let"`
 
-### NodeEater
+#### NodeEater
 Parses with the given node and returns the actual AST result, optionally you can pass arguments (arguments currently aren't thought through).
 Example:
 `Identifier()`
 
-### ValueCaputure
+#### ValueCaputure
 You want to save some results of parsers. You do that by writing the key with a colon in front of the eater.
 It is possible to capture whitespaces.
 Keys with a $ sign in front, won't affect the AST result. These are used as variables for things like error checking
+
+### Relations
+Relations are actual aliases on nodes.
+These are just for analyze purposes 

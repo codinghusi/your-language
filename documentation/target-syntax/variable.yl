@@ -17,7 +17,8 @@ relations Variable on Name {
 Blockscope scope on Variable;
 
 node VariableDeclaration(Relation<Name> var) {
-    describe() => name: var() ~ optional(. "=" . default: Expression());
+    describe() => name: var()
+               ~> ("=" -> default: Expression());
 
     on(name) {
         trait variable::declaration(default);
