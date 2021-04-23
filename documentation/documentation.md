@@ -1,4 +1,5 @@
 # Documentation
+Here is an [example](./target-syntax)
 
 ## Nodes
 All parts of the languages' code are cleverly extracted as Nodes, that are part of the AST.
