@@ -40,15 +40,16 @@ node Identifier {
 ```
 To handle errors, Your Language takes advantages of cases. Think them as if statements.
 ```yl
-// ...
-case (condition) {
-    // throw error, warning, help
-    // or provide more details about the node for analysis purpose 
+node Whatever {
+    ...
+    case (condition) {
+        // throw error, warning, help
+        // or provide more details about the node for analysis purpose 
+    }
 }
-// ...
 ```
 
-#### more
+#### More
 Like error(...) there's warning(...). The function help(...) provides info to the programmer, how he could fix the issue.
 TODO: how to provide details for analysis?
 
@@ -58,20 +59,20 @@ The syntax is based on different patterns joined by whitespace operators.
 So here's an example that parses the code `let foo = "bar"`:
 ```yl
 node VariableDeclaration {
-    describe() => "let" - name: Identifier() . "=" . init: Expression();
+    describe() => "let" -!> name: Identifier() -> "=" -> init: Expression();
 }
 ```
 The actual parsing is that one:
-`"let" - name: Identifier() . "=" . init: Expression()`
+`"let" -!> name: Identifier() -> "=" -> init: Expression()`
 And here's a step by step explaination what it does:
 
 | code                 | description                                                                                             | details             |
 |----------------------|---------------------------------------------------------------------------------------------------------|---------------------|
 | `let`                | Eat the next three chars that must be 'l', 'e', 't'                                                     | StringEater         |
-| `-`                  | Require a whitespace                                                                                    | Whitespace operands |
+| `-!>`                  | Require a whitespace                                                                                    | Whitespace operands |
 | `name: Identifier()` | Parse an Identifier using the IdentifierNode (declared in examples above) and save its result as "name" | NodeEater           |
-| `.`                  | Allow a whitespace                                                                                      | Whitespace operands |
-| `init: Expression()` | Parse an expression (also defined as a node) and store its value as "init"                              |                     |
+| `->`                  | Allow a whitespace                                                                                      | Whitespace operands |
+| `init: Expression()` | Parse an expression (also defined as a node) and store its value as "init"                              | NodeEater           |
 
 #### Whitespace operators
 | whitespace  | following optional | operator |
@@ -88,6 +89,11 @@ And here's a step by step explaination what it does:
 Define a string that's expected
 Example:
 `"let"`
+
+#### RegexEater
+Parses the given regex, encapsulated by /.../ and flags behind the last slash (syntax like in JavaScript)
+Example:
+`/[a-z_]+/i`
 
 #### NodeEater
 Parses with the given node and returns the actual AST result, optionally you can pass arguments (arguments currently aren't thought through).
