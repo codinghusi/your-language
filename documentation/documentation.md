@@ -86,29 +86,31 @@ And here's a step by step explaination what it does:
 
 
 #### StringEater
-Define a string that's expected
-Example:
+Define a string that's expected  
+Example:  
 `"let"`
 
 #### RegexEater
-Parses the given regex, encapsulated by /.../ and flags behind the last slash (syntax like in JavaScript)
-Example:
+Parses the given regex, encapsulated by /.../ and flags behind the last slash (syntax like in JavaScript)  
+Example:  
 `/[a-z_]+/i`
 
 #### NodeEater
-Parses with the given node and returns the actual AST result, optionally you can pass arguments (arguments currently aren't thought through).
-Example:
+Parses with the given node and returns the actual AST result, optionally you can pass arguments (arguments currently aren't thought through).  
+Example:  
 `Identifier()`
 
 #### ValueCaputure
 You want to save some results of parsers. You do that by writing the key with a colon in front of the eater.
 It is possible to capture whitespaces.
-Keys with a $ sign in front, won't affect the AST result. These are used as variables for things like error checking
+Keys with a $ sign in front, won't affect the AST result. These are used as variables for things like error checking  
+Example:  
+`mykey: SomethingToParse()`
 
 ## Relations
 Relations are actual aliases on nodes.
-These are just for analyze purposes.
-Example:
+These are just for analyze purposes.  
+Example:  
 ```yl
 relation Variable on Identifier {}
 relation Function on Identifier {}
