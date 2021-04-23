@@ -1,5 +1,5 @@
 import { Identifier } from './utils/variables';
 
 node Name implements Identifier {
-    parser() => value: /[_a-zA-Z]\w/;
+    describe() => value: /[_a-zA-Z]\w/;
 }

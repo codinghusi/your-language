@@ -8,11 +8,11 @@ nodes Value {
     node String {
         // once quote evaluated one path (" or ') it can't be changed
         const quote => choose('"', "'");
-        parser() => quote . value: loop(/./, '\\') . quote;
+        describe() => quote . value: loop(/./, '\\') . quote;
     }
 
     node Number {
-        parser() => value: /\d+(\.\d+)/;
+        describe() => value: /\d+(\.\d+)/;
     }
 }
 
@@ -20,21 +20,21 @@ nodes Expression {
     link Value;
 
     node Member {
-        parser() => object: Expression() . "." . property: Name();
+        describe() => object: Expression() . "." . property: Name();
     }
 
     node Call {
-        parser() => callee: Expression() . "(" . arguments: delimited(Expression, .",".) . ")";
+        describe() => callee: Expression() . "(" . arguments: delimited(Expression, .",".) . ")";
     }
 
     node Binary {
-        parser() => left: Expression() . operator: operands . right: Expression();
+        describe() => left: Expression() . operator: operands . right: Expression();
     }
 
     node Update {
         // keys with $ are just internal captures
 
-        parser() => choose(
+        describe() => choose(
             (prefix: true) => operator: updateOperands() $ts123: . argument: Name();
             (prefix: false) => argument: Name() $ts123: . operator: updateOperands();
         );
@@ -47,7 +47,7 @@ nodes Expression {
     }
 
     node Unary {
-        parser() => (prefix: true) operator: unaryOperands() . argument: Expression();
+        describe() => (prefix: true) operator: unaryOperands() . argument: Expression();
     }
 
 }

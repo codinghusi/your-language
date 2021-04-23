@@ -1,6 +1,0 @@
-non-whitespace: ~
-must-whitespace: -
-optional whitespace: .
-
-^ not good to separate everything with .
-... 
