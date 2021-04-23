@@ -40,10 +40,12 @@ node Identifier {
 ```
 To handle errors, Your Language takes advantages of cases. Think them as if statements.
 ```yl
+// ...
 case (condition) {
     // throw error, warning, help
     // or provide more details about the node for analysis purpose 
 }
+// ...
 ```
 
 #### more
@@ -97,6 +99,49 @@ You want to save some results of parsers. You do that by writing the key with a 
 It is possible to capture whitespaces.
 Keys with a $ sign in front, won't affect the AST result. These are used as variables for things like error checking
 
-### Relations
+## Relations
 Relations are actual aliases on nodes.
-These are just for analyze purposes 
+These are just for analyze purposes.
+Example:
+```yl
+relation Variable on Identifier {}
+relation Function on Identifier {}
+
+node VariableDeclaration {
+    describe() => "let" -!> Variable();
+}
+
+node FunctionDeclaration {
+    describe() => "function -!> Function() -> "()" -> CodeBlock();
+}
+```
+Later when I parse Identifier(), my analyser can identify, if it is a **variable** or a **function**.
+
+## Grouping / Namespace
+Removes boilerplate code, where you config stuff for all group members.
+
+### Nodes
+```yl
+nodes Expression {
+    node Binary {
+        ...
+    }
+    node Call {
+        ...
+    }
+}
+```
+You can parse Binary using `Expression::Binary()` but also try both Binary and Call, if you simply parse using `Expression()`
+
+### Relations
+```yl
+relations Variable on Identifier {
+    relation Let { }
+    relation Const { }
+}
+```
+Sets the relation base once on top, in the `relation` statements it can be omitted.
+Traits are also possible in the root level.
+
+## Traits
+TODO: fill
