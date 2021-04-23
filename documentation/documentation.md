@@ -3,7 +3,7 @@
 ## Nodes
 All parts of the languages' code are cleverly extracted as Nodes, that are part of the AST.
 
-# Nodes' description
+## Nodes' description
 Define a node that parses e.g. a variable, function or class name:
 ```yl
 node Identifier {
@@ -33,7 +33,7 @@ node Identifier {
     describe() => value: /\w+/;
     
     case(value.matches(/^\d/)) {
-        error("An identifier mustn't stat with a number");
+        error("An identifier mustn't start with a number");
     }
 }
 ```
