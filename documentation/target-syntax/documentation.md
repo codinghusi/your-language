@@ -12,13 +12,22 @@ Features it should cover:
 ## Nodes
 All parts of the languages' code are cleverly extracted as Nodes, that are part of the AST.
 
-# node description
+# Nodes' description
 Define a node that parses e.g. a variable, function or class name:
 ```yl
 node Identifier {
     describe() => value: /[_a-zA-Z]\w*/;
 }
 ```
+
+The AST Result for the code `myVeryNiceIdentifier` would be:
+```json
+{
+    "type": "IdentifierNode",
+    "value": "myVeryNiceIdentifier"
+}
+```
+
 So for better understanding here more generalized:
 ```yl
 node YourNodesName {
