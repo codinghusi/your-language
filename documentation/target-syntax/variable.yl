@@ -2,8 +2,6 @@
 
 """ A documentation string, lol :) """
 relations Variable on Name {
-    Blockscope<variable> scope;
-
     // without line 19: `relation Variable::Let on Name {...}`
     relation Let {
         trait variable(mutable: true);
@@ -14,7 +12,7 @@ relations Variable on Name {
     }
 }
 
-Blockscope scope on Variable;
+Blockscope scope on Variable { };
 
 node VariableDeclaration(Relation<Name> var) {
     describe() => name: var()

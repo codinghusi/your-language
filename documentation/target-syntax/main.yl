@@ -1,5 +1,27 @@
 import { Identifier, variable } from './utils/variables';
 import { Name } from './name';
+import { Expression } from './expression';
+import { VariableDeclaration } from './variable';
 
+// whitespace
+whitespace {
+    describe() => /\s/s;
+}
 
+// Entrypoint
+entrypoint {
+    link CommandsWithSemicolon;
+    link Commands;
+}
 
+nonNode CommandsWithSemicolon {
+    decl cmds => choose(
+        Expression(),
+        VariableDeclaration
+    );
+    describe() => return: cmds() -> ";";
+}
+
+nonNode Commands {
+    describe() => choose();
+}
