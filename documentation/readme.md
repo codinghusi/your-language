@@ -59,17 +59,17 @@ The syntax is based on different patterns joined by whitespace operators.
 So here's an example that parses the code `let foo = "bar"`:
 ```yl
 node VariableDeclaration {
-    describe() => "let" -!> name: Identifier() -> "=" -> init: Expression();
+    describe() => "let" ->> name: Identifier() -> "=" -> init: Expression();
 }
 ```
 The actual parsing is that one:
-`"let" -!> name: Identifier() -> "=" -> init: Expression()`
+`"let" ->> name: Identifier() -> "=" -> init: Expression()`
 And here's a step by step explaination what it does:
 
 | code                 | description                                                                                             | details             |
 |----------------------|---------------------------------------------------------------------------------------------------------|---------------------|
 | `let`                | Eat the next three chars that must be 'l', 'e', 't'                                                     | StringEater         |
-| `-!>`                  | Require a whitespace                                                                                    | Whitespace operands |
+| `->>`                  | Require a whitespace                                                                                    | Whitespace operands |
 | `name: Identifier()` | Parse an Identifier using the IdentifierNode (declared in examples above) and save its result as "name" | NodeEater           |
 | `->`                  | Allow a whitespace                                                                                      | Whitespace operands |
 | `init: Expression()` | Parse an expression (also defined as a node) and store its value as "init"                              | NodeEater           |
@@ -83,6 +83,7 @@ And here's a step by step explaination what it does:
 | optional    | yes                | ~>       |
 | required    | yes                | ~>>      |
 | not allowed | yes                | ~!>      |
+| I doesn't care | no                | #>      |
 
 
 #### StringEater
@@ -116,11 +117,11 @@ relation Variable on Identifier {}
 relation Function on Identifier {}
 
 node VariableDeclaration {
-    describe() => "let" -!> Variable();
+    describe() => "let" ->> Variable();
 }
 
 node FunctionDeclaration {
-    describe() => "function -!> Function() -> "()" -> CodeBlock();
+    describe() => "function ->> Function() -> "()" -> CodeBlock();
 }
 ```
 Later when I parse Identifier(), my analyser can identify, if it is a **variable** or a **function**.

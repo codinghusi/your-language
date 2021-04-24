@@ -19,7 +19,7 @@ nodes FunctionDeclaration {
     node {
         // has the type "FunctionDeclarationNode"
         describe() => "function"
-                    -!> name: Function()
+                    ->> name: Function()
                     -> parameters: Parameters()
                     -> block: Codeblock();
     }

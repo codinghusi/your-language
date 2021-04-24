@@ -9,4 +9,4 @@ Features it should cover:
 * Code analysis -> Optimizations are easier
 * Simple interpreter library -> Interpreter can also used to compile the language
 
-The documentation is located [here](./documentation/documentation.md)
+The documentation is located [here](./documentation/readme.md)

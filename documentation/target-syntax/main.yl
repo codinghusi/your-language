@@ -3,7 +3,14 @@ import { Name } from './name';
 import { Expression } from './expression';
 import { VariableDeclaration } from './variable';
 
-// whitespace
+
+// Comment
+comments {
+    comment => "//" -!> until() -> newline();
+    comment => "/*" -> until() -> "*/";
+}
+
+// Whitespace
 whitespace {
     describe() => /\s/s;
 }
