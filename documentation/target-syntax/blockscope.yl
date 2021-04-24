@@ -1,0 +1,12 @@
+import { Variable } from './variable';
+import { Function } from './function';
+
+Blockscope scope on Variable, Function {
+    on(Variable) {
+        chronological: true;
+    }
+
+    on(Function) {
+        chronological: false;
+    }
+};

@@ -1,0 +1,32 @@
+import { Name } from './name';
+import { Variable } from './variable';
+import { Expression } from './expresion';
+import { Codeblock } from './codeblock';
+
+
+relation Function on Name { }
+
+nodes FunctionDeclaration {
+    fn Parameters() {
+        describe() => "(" -> return: ...Parameter(",") -> ")";
+    }
+
+    node Parameter {
+        describe() => name: Variable::Let()
+                    ~> ("=" -> default: Expression());
+    }
+
+    node {
+        // has the type "FunctionDeclarationNode"
+        describe() => "function"
+                    -!> name: Function()
+                    -> parameters: Parameters()
+                    -> block: Codeblock();
+    }
+
+    node Lambda {
+        describe() => "function"
+                   -> parameters: Parameters()
+                   -> block: Codeblock();
+    }
+} 

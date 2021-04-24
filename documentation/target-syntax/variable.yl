@@ -1,8 +1,13 @@
 
+Blockscope scope on Variable {
+    chronological: true;
+};
 
 """ A documentation string, lol :) """
 relations Variable on Name {
     // without line 19: `relation Variable::Let on Name {...}`
+    trait defaultScope(scope);
+
     relation Let {
         trait variable(mutable: true);
     }
@@ -11,8 +16,6 @@ relations Variable on Name {
         trait variable(mutable: false);
     }
 }
-
-Blockscope scope on Variable { };
 
 node VariableDeclaration(Relation<Name> var) {
     describe() => name: var()
@@ -23,7 +26,7 @@ node VariableDeclaration(Relation<Name> var) {
     }
 
     case(scope.exists(variable.name: name)) {
-        error("Variable with name '${name.value}' already exists");
+        error("Variable with name '${name.value}' does already exist");
         help("try another name");
     }
 }
