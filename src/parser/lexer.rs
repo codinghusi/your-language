@@ -1,21 +1,17 @@
-use std::iter::Peekable;
-use std::vec::IntoIter;
-use std::{fs, io};
-use peekmore::{
-    PeekMore,
-    PeekMoreIterator
-};
+
 
 use crate::parser::token::{
     Token, Whitespace
 };
 
-use crate::parser::input_stream::{
-    InputStream
+use crate::parser::input_stream::InputStream;
+
+use crate::parser::token::{
+    Item, SingleWhitespace
 };
 
 type Result<T> = std::result::Result<T, String>;
-type Code = PeekMoreIterator<Peekable<IntoIter<char>>>;
+type Code = InputStream;
 
 pub struct Lexer {
     code: Code
@@ -23,30 +19,15 @@ pub struct Lexer {
 
 
 impl Lexer {
-    fn from_text(text: &str) -> Self {
-        Lexer {
-            code: text
-                .chars()
-                .collect::<Vec<_>>()
-                .into_iter()
-                .peekable()
-                .peekmore(),
-        }
-    }
-
-    fn from_file(file_path: &str) -> io::Result<Self> {
-        Ok(Self::from_text(&fs::read_to_string(file_path)?))
-    }
-
     // ----- parsing utils
 
     // TODO: Whitespace::Ident and Dedent not implemented
     fn eat_whitespace(&mut self) -> Option<Token> {
-        let mut whitespaces = String::new();
+        let mut whitespaces = Vec::new();
 
         loop {
             match self.code.peek() {
-                Some(c) if c.is_whitespace() => whitespaces.push(self.code.next().unwrap()),
+                Some(item) if let Item::Whitespace(whitespace) = item => whitespaces.push(whitespace),
                 _ => break
             }
         }
@@ -58,38 +39,18 @@ impl Lexer {
     }
 
     fn check_char(&self, char: char) -> bool {
-        if let Some(compare) = self.code.peek() {
-            if char == *compare {
-                return true;
+        if let Some(item) = self.code.peek() {
+            if let Item::Char(compare) = item {
+                if char == compare {
+                    return true;
+                }
             }
         }
         false
     }
 
-    fn check_str(&self, token_str: &str) -> bool {
-        let chars = token_str.as_bytes();
-        for c in chars.iter() {
-            // check for eof
-            if let None = self.code.peek() {
-                self.code.reset_cursor();
-                return false;
-            }
-
-            // revert if not working
-            if !self.check_char(*c as char) {
-                self.code.reset_cursor();
-                return false;
-            }
-
-            // go further
-            self.code.advance_cursor();
-        }
-        self.code.reset_cursor();
-        return true;
-    }
-
     fn eat_str(&self, token_str: &str) -> bool {
-        if self.check_str(token_str) {
+        if self.code.testFor(token_str) {
             self.code.nth(token_str.len());
             return true;
         }
@@ -107,16 +68,16 @@ impl Lexer {
         }
     }
 
-    fn eat_until_any(&self, strs: [&str]) -> String{
-        let mut result = String::new();
-        loop {
-            if !self.eat_str(token_str) {
-                result.push(self.code.next().unwrap());
-                continue;
-            }
-            return result;
-        }
-    }
+    // fn eat_until_any(&self, strs: &[&String]) -> String{
+    //     let mut result = String::new();
+    //     loop {
+    //         if !self.eat_str(token_str) {
+    //             result.push(self.code.next().unwrap());
+    //             continue;
+    //         }
+    //         return result;
+    //     }
+    // }
 
     // FIXME: not working
     // fn eat_while<F: Fn(&Lexer) -> bool>(&mut self, predicate: F) -> Result<String> {
