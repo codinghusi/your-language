@@ -21,7 +21,7 @@ entrypoint {
     link Commands;
 }
 
-nonNode CommandsWithSemicolon {
+nodeless CommandsWithSemicolon {
     decl cmds => choose(
         Expression(),
         VariableDeclaration
@@ -29,6 +29,6 @@ nonNode CommandsWithSemicolon {
     describe() => return: cmds() -> ";";
 }
 
-nonNode Commands {
+nodeless Commands {
     describe() => choose();
 }

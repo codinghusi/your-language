@@ -1,6 +1,8 @@
 # Documentation
 Here is an [example](./target-syntax)
 
+DISCLAMER: This is how I want to implement it. I didn't even begin with the parser. But it's a nice idea though.
+
 ## Nodes
 All parts of the languages' code are cleverly extracted as Nodes, that are part of the AST.
 
@@ -75,15 +77,14 @@ And here's a step by step explaination what it does:
 | `init: Expression()` | Parse an expression (also defined as a node) and store its value as "init"                              | NodeEater           |
 
 #### Whitespace operators
-| whitespace  | following optional | operator |
+| whitespace  | following eater required | operator |
 |-------------|--------------------|----------|
-| optional    | no                 | ->       |
-| required    | no                 | ->>      |
-| not allowed | no                 | -!>      |
-| optional    | yes                | ~>       |
-| required    | yes                | ~>>      |
-| not allowed | yes                | ~!>      |
-| I doesn't care | no                | #>      |
+| optional    | yes                 | ->       |
+| required    | yes                 | ->>      |
+| not allowed | yes                 | -!>      |
+| optional    | no                | ~>       |
+| required    | no                | ~>>      |
+| not allowed | no                | ~!>      |
 
 
 #### StringEater
