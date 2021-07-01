@@ -1,7 +1,7 @@
 use crate::nodes::identifier::IdentifierNode;
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, Brace};
+use crate::token::{Token, Brace, BaseLexer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::Eater;
@@ -14,7 +14,7 @@ pub struct VariableDeclarationNode {
 }
 
 impl Node for VariableDeclarationNode {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
+    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
         let name = IdentifierNode::parse(lexer)?;
 
         // parses "() => "

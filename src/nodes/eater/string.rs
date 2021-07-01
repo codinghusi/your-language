@@ -1,6 +1,6 @@
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::Token;
+use crate::token::{Token, BaseLexer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::EaterNode;
 
@@ -11,7 +11,7 @@ pub struct StringEater {
 }
 
 impl Node for StringEater {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
+    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
         if let Some(Token::String(str)) = lexer.next() {
             Ok(StringEater {
                 value: str.clone(),

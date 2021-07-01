@@ -2,11 +2,12 @@ use logos::{Lexer, Span};
 use node_derive::{NodeEnum, NodeType};
 
 use crate::node::{Node, NodeEnum, NodeType};
-use crate::token::Token;
+use crate::token::{Token, BaseLexer};
 use crate::nodes::eater::naming::{NamedEater, UnnamedEater};
 use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::regex::RegexEater;
 use crate::nodes::eater::function::FunctionEater;
+
 
 pub mod naming;
 pub mod string;

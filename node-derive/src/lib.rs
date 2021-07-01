@@ -5,22 +5,39 @@ extern crate syn;
 
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{Ident, DeriveInput, parse_macro_input, Data, DataEnum, Type };
+use syn::{Ident, DeriveInput, parse_macro_input, Data, DataEnum, Type, Attribute, AttributeArgs, NestedMeta, Meta, Lit, MetaNameValue, PatTupleStruct};
 use syn::__private::TokenStream2;
+use std::iter::Peekable;
 
 #[proc_macro_derive(NodeType)]
 pub fn node_type_macro_derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     let name = &ast.ident;
-    impl_node_macro(&name)
+    impl_node_type_macro(&name)
 }
 
-fn impl_node_macro(name: &Ident) -> TokenStream {
+fn impl_node_type_macro(name: &Ident) -> TokenStream {
     let gen = quote! {
         impl NodeType for #name {
             fn get_type(&self) -> String {
                 String::from(stringify!(#name))
             }
+        }
+    };
+    gen.into()
+}
+
+#[proc_macro_attribute]
+pub fn node(args: TokenStream, body: TokenStream) -> TokenStream {
+    let node_start = args.parse(args as PatTupleStruct)?;
+
+    // impl_node_macro(&name)
+}
+
+fn impl_node_macro(node_start: &PatTupleStruct) -> TokenStream {
+    let gen = quote! {
+        impl NodeStart for #name {
+            fn is_correct_token
         }
     };
     gen.into()
@@ -78,7 +95,7 @@ fn impl_node_enum_macro(name: &Ident, data: &DataEnum) -> TokenStream {
 
     let gen = quote! {
         impl NodeEnum for #my_enum {
-            fn parse_any(lexer: &mut Lexer<Token>) -> Option<Self> {
+            fn parse_any(lexer: &mut BaseLexer<'_>) -> Option<Self> {
                 #(#variants)*
                 None
             }

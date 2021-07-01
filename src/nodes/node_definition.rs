@@ -2,9 +2,10 @@ use crate::node::{Node, NodeEnum, NodeType};
 use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::node_block::NodeBlockNode;
 use logos::{Span, Lexer};
-use crate::token::Token;
+use crate::token::{Token, BaseLexer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::keyword::KeywordNode;
+use std::iter::Peekable;
 
 #[derive(NodeType)]
 pub struct NodeDefinitionNode {
@@ -14,7 +15,7 @@ pub struct NodeDefinitionNode {
 }
 
 impl Node for NodeDefinitionNode {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
+    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
         let start = lexer.span().start;
         KeywordNode::parse(lexer)?.test_kw("node")?;
         let identifier = IdentifierNode::parse(lexer)?;

@@ -1,5 +1,6 @@
 use logos::{Logos, Lexer};
 use crate::nodes::eater::separator::{SeparationEater, SeparatedEater};
+use std::iter::Peekable;
 
 #[derive(Debug)]
 pub enum Brace {
@@ -39,6 +40,8 @@ pub enum Token {
     #[error]
     Error
 }
+
+pub type BaseLexer<'a> = Lexer<'a, Token>;
 
 // pub trait LexerHelper {
 //     fn keyword(&mut self, name: &str) -> Result<&str, String>;

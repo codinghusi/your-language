@@ -1,6 +1,6 @@
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::Token;
+use crate::token::{Token, BaseLexer};
 use node_derive::{NodeType, NodeEnum};
 
 #[derive(NodeType)]
@@ -20,7 +20,7 @@ impl KeywordNode {
 }
 
 impl Node for KeywordNode {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
+    fn parse(lexer: &mut BaseLexer<'_>) -> Result<Self, String> {
         if let Some(token) = lexer.next() {
             if let Token::Identifier(identifier_name) = token {
                 Ok(KeywordNode {

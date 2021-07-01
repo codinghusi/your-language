@@ -1,5 +1,5 @@
 use logos::{Lexer, Span};
-use crate::token::{Token, Brace};
+use crate::token::{Token, Brace, BaseLexer};
 use crate::nodes::variable_declaration::VariableDeclarationNode;
 use crate::node::{Node, NodeEnum, NodeType};
 use node_derive::{NodeType, NodeEnum};
@@ -15,7 +15,7 @@ pub struct NodeBlockNode {
 }
 
 impl Node for NodeBlockNode {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
+    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
         if let Some(Token::CurlyBrace(Brace::Open)) = lexer.next() { }
         else {
             Err(format!("Expected {{ for starting a block"))?

@@ -22,9 +22,6 @@ fn main() {
 
     let mut lex = Token::lexer(code);
 
-    // DocumentNode::parse(lex);
-
-
     let parsed = DocumentNode::parse(&mut lex);
 }
 
