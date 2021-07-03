@@ -15,20 +15,12 @@ pub struct NodeBlockNode {
 }
 
 impl Node for NodeBlockNode {
-    fn parse(buffer: &mut ParseBuffer) -> Result<Self, String> {
-        if let Some(Token::CurlyBrace(Brace::Open)) = buffer.next() { }
-        else {
-            Err(format!("Expected {{ for starting a block"))?
-        }
-
-        while let Some(node) = BlockItem::parse_any(buffer) {
-            unimplemented!();
-        }
-
-        if let Some(Token::CurlyBrace(Brace::Close)) = buffer.next() { }
-        else {
-            Err(format!("Expected }} for ending a block"))?
-        }
+    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
+        braced!(input, curly {
+            while let Some(node) = BlockItem::parse_any(input) {
+                unimplemented!();
+            }
+        });
 
         Ok(NodeBlockNode {
             span: 0..1

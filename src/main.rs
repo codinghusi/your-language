@@ -27,10 +27,11 @@ fn main() {
 
     let span;
     spanned!(span, buffer, {
-        let identifier = token!(buffer, Identifier(capture)).unwrap();
+        let identifier: String;
+        let token = token!(buffer, Token::Identifier(identifier)).unwrap();
     });
 
-    println!("span: {:?}, slice: {}", span, identifier.slice);
+    println!("span: {:?}, slice: {}", span, token.slice);
 
     // let mut lex = Token::lexer(code);
     //

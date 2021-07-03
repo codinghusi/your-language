@@ -51,64 +51,44 @@ pub type ParseError= parser::ParseError<Token>;
 pub type ParseFailure = parser::ParseFailure<Token>;
 
 #[macro_export]
+macro_rules! spanned {
+    ($destination:ident, $buffer:expr, {$($body:tt)*}) => {
+        let start = $buffer.peek_span().start;
+        $($body)*
+        let end = $buffer.peek_span().end;
+        $destination = start..end;
+    };
+}
+
+#[macro_export]
+macro_rules! identifier {
+    ($buffer:ident, $capture:ident) => {
+        token!($buffer, crate::token::Token::Identifier($capture))
+    };
+}
+
+#[macro_export]
+macro_rules! braced {
+    ($buffer:ident, ty $type:ident, {$($body:tt)*}) => {
+        token!($buffer, crate::token::Token::$type(crate::token::Brace::Open));
+        $($body)*
+        token!($buffer, crate::token::Token::$type(crate::token::Brace::Close));
+    };
+
+    ($buffer:ident, curly {$($body:tt)*}) => {
+        braced!($buffer, ty CurlyBrace, { $($body)* });
+    };
+
+    ($buffer:ident, rounded {$($body:tt)*}) => {
+        braced!($buffer, ty RoundedBrace, { $($body)* });
+    };
+}
+
+#[macro_export]
 macro_rules! token {
-    // results
-    (result ok, $token:expr) => {
-        Ok($token)
-    };
-
-    (result poisoned, $token:expr, $variant:expr) => {
-        Err(
-            crate::token::ParseFailure::Poisoned(
-                crate::token::ParseError::Unexpected {
-                    expected: vec![token!(str_variant, $variant)],
-                    got: $token
-                }
-            )
-        )
-    };
-
-    (result eof, $variant:expr) => {
-        Err(
-            crate::token::ParseFailure::Poisoned(
-                crate::token::ParseError::EOF {
-                    expected: vec![token!(str_variant, $variant)]
-                }
-            )
-        )
-    };
-
-    // variants
-    (variant, $ident:ident (capture)) => {
-        Token::$ident(token)
-    };
-
-    (variant, $ident:ident) => {
-        Token::$ident
-    };
-
-    (str_variant, $($variant:tt)+) => {
-        stringify!($($variant)+).to_string()
-    };
-
-    // token based matchers
-    (token $token:expr, $($variant:tt)+) => {
+    ($buffer:ident, try $variant:pat) => {
         {
-            if let Some(token) = $token {
-                if let token!(variant, $($variant)+) = token.token {
-                    token!(result ok, token)
-                } else {
-                    token!(result poisoned, token, $($variant)+)
-                }
-            } else {
-                token!(result eof, $($variant)+)
-            }
-        }
-    };
-
-    (try token $token:expr, $($variant:tt)+) => {
-        {
-            let result = token!(token $token, $($variant)+);
+            let result = token!($buffer, $variant);
             if let Ok(token) = result {
                 Ok(token)
             } else if let Err(ParseFailure::Posioned(failure)) = result {
@@ -119,35 +99,40 @@ macro_rules! token {
         }
     };
 
-    // buffer based matchers
-    ($buffer:expr, try $($variant:tt)+) => {
-        let token = token!(try token $buffer.peek(), $($variant)+);
-        if token.is_ok() {
-            $buffer.next();
-        }
-        token
-    };
-
-    ($buffer:expr, $($variant:tt)+) => {
-        {
-            let token = token!(token $buffer.peek(), $($variant)+);
-            if token.is_ok() {
+    ($buffer:ident, $variant:pat) => {
+        if let Some(token) = $buffer.peek() {
+            if let $variant = token.token {
                 $buffer.next();
+                Ok(token)
+            } else {
+                Err(
+                    crate::token::ParseFailure::Poisoned(
+                        crate::token::ParseError::Unexpected {
+                            expected: vec![stringify!($variant).to_string()],
+                            got: token
+                        }
+                    )
+                )
             }
-            token
+        } else {
+            Err(
+                crate::token::ParseFailure::Poisoned(
+                    crate::token::ParseError::EOF {
+                        expected: vec![stringify!($variant).to_string()]
+                    }
+                )
+            )
         }
     };
 }
 
-#[macro_export]
-macro_rules! spanned {
-    ($destination:ident, $buffer:expr, {$($body:tt)*}) => {
-        let start = $buffer.peek_span().start;
-        $($body)*
-        let end = $buffer.peek_span().end;
-        $destination = start..end;
-    };
-}
+//     (result poisoned, $token:expr, $variant:expr) => {
+//
+//     };
+//
+//     (result eof, $variant:expr) => {
+//
+//     };
 
 // pub trait LexerHelper {
 //     fn keyword(&mut self, name: &str) -> Result<&str, String>;

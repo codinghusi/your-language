@@ -27,7 +27,7 @@ impl Node for NodeDefinitionNode {
 
         let span;
         spanned!(span, input, {
-            let identifier = token!(input, Identifier(capture))?;
+            let identifier = token!(input, Token::Identifier(identifier))?;
             let block: NodeBlockNode = input.parse()?;
         });
 

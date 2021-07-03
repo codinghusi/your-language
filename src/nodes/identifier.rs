@@ -14,7 +14,7 @@ pub struct IdentifierNode {
 impl<'source> Parse<'source, Token> for IdentifierNode {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
         if let Some(token) = input.next() {
-            if let Token::Identifier(identifier) = token {
+            if let Token::Identifier(identifier) = token.token {
                 Ok(IdentifierNode {
                     name: identifier.to_string(),
                     span: input.span()
