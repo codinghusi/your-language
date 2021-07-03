@@ -1,7 +1,7 @@
 use crate::nodes::identifier::IdentifierNode;
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, Brace, BaseLexer};
+use crate::token::{Token, Brace, ParseBuffer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::Eater;
@@ -14,28 +14,28 @@ pub struct VariableDeclarationNode {
 }
 
 impl Node for VariableDeclarationNode {
-    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
-        let name = IdentifierNode::parse(lexer)?;
+    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
+        let name = IdentifierNode::parse(input)?;
 
         // parses "() => "
-        if let Some(Token::RoundedBrace(Brace::Open)) = lexer.next() { }
+        if let Some(Token::RoundedBrace(Brace::Open)) = input.next() { }
         else {
             Err(format!("Expected ("))?
         }
 
-        if let Some(Token::RoundedBrace(Brace::Close)) = lexer.next() { }
+        if let Some(Token::RoundedBrace(Brace::Close)) = input.next() { }
         else {
             Err(format!("Expected )"))?
         }
 
-        if let Some(Token::Assign) = lexer.next() { }
+        if let Some(Token::Assign) = input.next() { }
         else {
             Err(format!("Expected =>"))?
         }
 
         // parses the actual eater
-        if let Some(eater) = Eater::parse_any(lexer) {
-            let span = name.span().start..lexer.span().end;
+        if let Some(eater) = Eater::parse_any(input) {
+            let span = name.span().start..input.span().end;
 
             Ok(Self {
                 name,

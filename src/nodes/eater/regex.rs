@@ -1,6 +1,6 @@
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, BaseLexer};
+use crate::token::{Token, ParseBuffer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::EaterNode;
 
@@ -11,11 +11,11 @@ pub struct RegexEater {
 }
 
 impl Node for RegexEater {
-    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
-        if let Some(Token::Regex(str)) = lexer.next() {
+    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
+        if let Some(Token::Regex(str)) = input.next() {
             Ok(RegexEater {
                 value: str.clone(),
-                span: lexer.span()
+                span: input.span()
             })
         } else {
             Err(format!("Expected a regex"))

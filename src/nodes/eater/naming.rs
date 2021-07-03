@@ -6,7 +6,7 @@ use logos::{Lexer, Span};
 use node_derive::{NodeEnum, NodeType};
 
 use crate::node::{Node, NodeEnum, NodeType};
-use crate::token::{Token, BaseLexer};
+use crate::token::{Token, ParseBuffer};
 
 #[derive(NodeType)]
 pub struct NamedEater {
@@ -16,17 +16,17 @@ pub struct NamedEater {
 }
 
 impl Node for NamedEater {
-    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
-        if let Some(Token::EaterName(name)) = lexer.next() {
-            let namespan = lexer.span();
-            if let Some(eater) = EaterItem::parse_any(lexer) {
+    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
+        if let Some(Token::EaterName(name)) = input.next() {
+            let namespan = input.span();
+            if let Some(eater) = EaterItem::parse_any(input) {
                 Ok(Self {
                     name: IdentifierNode {
                         name: name.clone(),
                         span: namespan
                     },
                     eater,
-                    span: lexer.span()
+                    span: input.span()
                 })
             } else {
                 Err("Expected eater")?
@@ -49,7 +49,7 @@ pub struct UnnamedEater {
 }
 
 impl Node for UnnamedEater {
-    fn parse(lexer: &mut BaseLexer<'_>) -> Result<Self, String> {
+    fn parse(lexer: &mut ParseBuffer) -> Result<Self, String> {
         if let Some(eater) = EaterItem::parse_any(lexer) {
             Ok(Self {
                 eater,

@@ -1,6 +1,6 @@
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, BaseLexer};
+use crate::token::{Token, ParseBuffer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::node_definition::NodeDefinitionNode;
 use std::borrow::Borrow;
@@ -18,7 +18,7 @@ pub struct DocumentNode {
 }
 
 impl Node for DocumentNode {
-    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
+    fn parse(lexer: &mut ParseBuffer) -> Result<Self, String> {
         // todo!("Implement a more generalized function for that common thing");
         let mut items = vec![];
         let start = lexer.span().end;

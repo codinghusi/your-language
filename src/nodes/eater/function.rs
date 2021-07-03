@@ -1,18 +1,18 @@
 use crate::node::{Node, NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, BaseLexer};
+use crate::token::{Token, ParseBuffer};
 use node_derive::{NodeType, NodeEnum, node};
 use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::eater::EaterNode;
 
-#[node(start = "Identifier")]
+#[derive(NodeType)]
 pub struct FunctionEater {
     name: IdentifierNode,
     span: Span
 }
 
 impl Node for FunctionEater {
-    fn parse(lexer: &mut BaseLexer) -> Result<Self, String> {
+    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
         unimplemented!()
     }
 
