@@ -20,7 +20,7 @@ pub struct SeparationEater {
 }
 
 impl SeparationEater {
-    pub fn fromRaw(raw: &str) -> SeparationEater {
+    pub fn from_raw(raw: &str) -> SeparationEater {
         match raw {
             "->" => Self {
                 whitespace: Whitespace::Optional,

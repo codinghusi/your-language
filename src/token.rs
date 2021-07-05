@@ -26,7 +26,7 @@ pub enum Token {
     #[regex(r"/([^\\/]|\\.)+/",  |lex| lex.slice().to_string())]
     Regex(String),
 
-    #[regex(r"/[-~][!>]?>/", |lex| SeparationEater::fromRaw(lex.slice()))]
+    #[regex(r"/[-~][!>]?>/", |lex| SeparationEater::from_raw(lex.slice()))]
     Separator(SeparationEater),
 
     #[regex("/\"([^\"])+\"/", |lex| lex.slice().to_string())]

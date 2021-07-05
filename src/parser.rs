@@ -81,7 +81,7 @@ impl<Token: Clone> fmt::Debug for ParseFailure<Token> {
     }
 }
 
-pub type Result<'source, Result, Token: Logos<'source>> = std::result::Result<Result, ParseFailure<Token>>;
+pub type Result<'source, Result, Token> = std::result::Result<Result, ParseFailure<Token>>;
 
 pub struct ParseBuffer<'source, Token>
 where Token: Logos<'source> + Clone {
