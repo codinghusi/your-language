@@ -1,14 +1,14 @@
-use crate::node::{Node, NodeEnum, NodeType};
+use crate::node::{NodeEnum, NodeType};
 use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::node_block::NodeBlockNode;
 use logos::{Span, Lexer};
-use crate::token::{Token, ParseBuffer};
+use crate::token::{Token, ParseBuffer, Result};
 use node_derive::{NodeType, NodeEnum};
-use crate::nodes::keyword::KeywordNode;
 use std::iter::Peekable;
 
 #[macro_use]
 use crate::token;
+use crate::parser::Parse;
 
 #[derive(NodeType)]
 pub struct NodeDefinitionNode {
@@ -17,17 +17,13 @@ pub struct NodeDefinitionNode {
     span: Span
 }
 
-impl Node for NodeDefinitionNode {
-    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
-        // let span = parse!(lexer, {
-        //     keyword!(lexer: "node");
-        //     let identifier = @identifier();
-        //     let block = @node(NodeBlockNode);
-        // })?;
+impl<'source> Parse<'source, Token> for NodeDefinitionNode {
+    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
 
         let span;
         spanned!(span, input, {
-            let identifier = token!(input, Token::Identifier(identifier))?;
+            let identifier;
+            token!(input, Token::Identifier(identifier))?;
             let block: NodeBlockNode = input.parse()?;
         });
 
@@ -52,7 +48,7 @@ impl Node for NodeDefinitionNode {
         // })
     }
 
-    fn span(&self) -> &Span {
-        &self.span
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }

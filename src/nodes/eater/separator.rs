@@ -1,5 +1,6 @@
 use crate::nodes::eater::Eater;
 
+#[derive(Clone)]
 pub enum Whitespace {
     Optional,
     Required,
@@ -12,6 +13,7 @@ pub struct SeparatedEater {
     eater: Eater
 }
 
+#[derive(Clone)]
 pub struct SeparationEater {
     whitespace: Whitespace,
     require_following_eater: bool

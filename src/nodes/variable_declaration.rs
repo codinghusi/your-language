@@ -1,10 +1,11 @@
 use crate::nodes::identifier::IdentifierNode;
-use crate::node::{Node, NodeEnum, NodeType};
+use crate::node::{NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, Brace, ParseBuffer};
+use crate::token::{Token, Brace, ParseBuffer, Result};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::Eater;
+use crate::parser::Parse;
 
 #[derive(NodeType)]
 pub struct VariableDeclarationNode {
@@ -13,44 +14,27 @@ pub struct VariableDeclarationNode {
     span: Span
 }
 
-impl Node for VariableDeclarationNode {
-    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
-        let name = IdentifierNode::parse(input)?;
+impl<'source> Parse<'source, Token> for VariableDeclarationNode {
+    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+        let name: IdentifierNode = input.parse()?;
 
         // parses "() => "
-        if let Some(Token::RoundedBrace(Brace::Open)) = input.next() { }
-        else {
-            Err(format!("Expected ("))?
-        }
-
-        if let Some(Token::RoundedBrace(Brace::Close)) = input.next() { }
-        else {
-            Err(format!("Expected )"))?
-        }
-
-        if let Some(Token::Assign) = input.next() { }
-        else {
-            Err(format!("Expected =>"))?
-        }
+        braced!(input, rounded {});
+        token!(input, Token::Assign);
 
         // parses the actual eater
-        if let Some(eater) = Eater::parse_any(input) {
-            let span = name.span().start..input.span().end;
+        let eater: Eater = input.parse()?;
 
-            Ok(Self {
-                name,
-                span,
-                eater
-            })
-        }
-        else {
-            Err(format!("Parser expected"))
-        }
+        let span = name.span().start..input.span().end;
 
-
+        Ok(Self {
+            name,
+            span,
+            eater
+        })
     }
 
-    fn span(&self) -> &Span {
-        &self.span
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }

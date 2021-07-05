@@ -1,8 +1,9 @@
-use crate::node::{Node, NodeEnum, NodeType};
+use crate::node::{NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, ParseBuffer};
+use crate::token::{Token, ParseBuffer, Result};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::EaterNode;
+use crate::parser::Parse;
 
 #[derive(NodeType)]
 pub struct StringEater {
@@ -10,21 +11,20 @@ pub struct StringEater {
     span: Span
 }
 
-impl Node for StringEater {
-    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
-        if let Some(Token::String(str)) = input.next() {
-            Ok(StringEater {
-                value: str.clone(),
-                span: input.span()
-            })
-        } else {
-            Err(format!("Expected a string"))
-        }
+impl<'source> Parse<'source, Token> for StringEater {
+    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+        let str: String;
+        let token = token!(input, Token::String(str))?;
+
+        Ok(StringEater {
+            value: str.clone(),
+            span: token.span()
+        })
     }
 
-    fn span(&self) -> &Span {
-        &self.span
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }
 
-impl EaterNode for StringEater { }
+impl<'source> EaterNode<'source, Token> for StringEater { }

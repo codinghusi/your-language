@@ -5,8 +5,9 @@ use crate::nodes::eater::separator::SeparationEater;
 use logos::{Lexer, Span};
 use node_derive::{NodeEnum, NodeType};
 
-use crate::node::{Node, NodeEnum, NodeType};
-use crate::token::{Token, ParseBuffer};
+use crate::node::{NodeEnum, NodeType};
+use crate::token::{Token, ParseBuffer, Result};
+use crate::parser::Parse;
 
 #[derive(NodeType)]
 pub struct NamedEater {
@@ -15,30 +16,25 @@ pub struct NamedEater {
     span: Span
 }
 
-impl Node for NamedEater {
-    fn parse(input: &mut ParseBuffer) -> Result<Self, String> {
-        if let Some(Token::EaterName(name)) = input.next() {
-            let namespan = input.span();
-            if let Some(eater) = EaterItem::parse_any(input) {
-                Ok(Self {
-                    name: IdentifierNode {
-                        name: name.clone(),
-                        span: namespan
-                    },
-                    eater,
-                    span: input.span()
-                })
-            } else {
-                Err("Expected eater")?
-            }
+impl<'source> Parse<'source, Token> for NamedEater {
+    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+        let name: String;
+        let name_token = token!(input, Token::EaterName(name))?;
 
-        } else {
-            Err("Expected an eater name")?
-        }
+        let eater: EaterItem = input.parse()?;
+
+        Ok(Self {
+            name: IdentifierNode {
+                name,
+                span: name_token.span()
+            },
+            eater,
+            span: eater.span()
+        })
     }
 
-    fn span(&self) -> &Span {
-        &self.span
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }
 
@@ -48,21 +44,18 @@ pub struct UnnamedEater {
     span: Span
 }
 
-impl Node for UnnamedEater {
-    fn parse(lexer: &mut ParseBuffer) -> Result<Self, String> {
-        if let Some(eater) = EaterItem::parse_any(lexer) {
-            Ok(Self {
-                eater,
-                span: lexer.span()
-            })
-        } else {
-            Err("Expected eater")?
-        }
+impl<'source> Parse<'source, Token> for UnnamedEater {
+    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+        let eater: EaterItem = input.parse()?;
+        Ok(Self {
+            eater,
+            span: eater.span()
+        })
     }
 
-    fn span(&self) -> &Span {
-        &self.span
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }
 
-impl EaterNode for NamedEater { }
+impl<'source> EaterNode<'source, Token> for NamedEater { }

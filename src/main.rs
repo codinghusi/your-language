@@ -9,13 +9,13 @@ mod node;
 mod nodes;
 mod parser;
 
-use crate::node::{Node, NodeType, NodeEnum};
+use crate::node::{NodeType, NodeEnum};
 
-use crate::token::{Token, ParseBuffer};
+use crate::token::{Token, ParseBuffer, Result};
 use crate::nodes::document::{DocumentNode};
 use logos::Logos;
 
-fn main() {
+fn main() -> Result<'static, ()> {
     let code = r"
         node Identifier {
             describe() => value: /[_a-zA-Z]\w*/;
@@ -23,19 +23,17 @@ fn main() {
     ";
 
     let mut lexer = Token::lexer(code);
-    let mut buffer = ParseBuffer::from(&mut lexer);
+    let mut buffer = crate::parser::ParseBuffer::from(&mut lexer);
 
     let span;
     spanned!(span, buffer, {
         let identifier: String;
-        let token = token!(buffer, Token::Identifier(identifier)).unwrap();
+        let token = token!(buffer, Token::Identifier(identifier))?;
     });
 
     println!("span: {:?}, slice: {}", span, token.slice);
 
-    // let mut lex = Token::lexer(code);
-    //
-    // let parsed = DocumentNode::parse(&mut lex);
+    Ok(())
 }
 
 

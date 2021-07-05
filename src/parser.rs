@@ -2,38 +2,48 @@ use logos::{Span, SpannedIter, Lexer, Logos};
 use std::fmt::{Display, Formatter, Debug};
 use std::iter::Peekable;
 use std::fmt;
+use std::slice::Iter;
+use std::vec::IntoIter;
 use std::marker::PhantomData;
 
-pub struct ParserToken<Token>  {
+#[derive(Clone)]
+pub struct ParseToken<Token>
+where Self: Sized, Token: Clone {
     pub token: Token,
-    pub span: Span,
+    pub _span: Span,
     pub slice: String
 }
 
 // TODO: implement From<T>
-impl<Token> ParserToken<Token> {
+impl<Token> ParseToken<Token>
+where Token: Clone {
     fn from<'source>(item: (Token, Span), slice: String) -> Self
     where Token: Logos<'source> {
         // TODO: Find a way to add slices to ParserToken
-        ParserToken {
+        ParseToken {
             token: item.0,
-            span: item.1,
+            _span: item.1,
             slice
         }
     }
+
+    pub fn span(&self) -> Span {
+        self._span.clone()
+    }
 }
 
-pub enum ParseError<Token> {
+pub enum ParseError<Token>
+where Token: Clone {
     Unexpected {
         expected: Vec<String>,
-        got: ParserToken<Token>
+        got: ParseToken<Token>
     },
     EOF {
         expected: Vec<String>
     }
 }
 
-impl<Token> fmt::Debug for ParseError<Token> {
+impl<Token: Clone> fmt::Debug for ParseError<Token> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Unexpected { expected, got: token } => {
@@ -54,16 +64,19 @@ impl<Token> fmt::Debug for ParseError<Token> {
     }
 }
 
-pub enum ParseFailure<Token> {
+pub enum ParseFailure<Token: Clone> {
     Peeked(ParseError<Token>),
-    Poisoned(ParseError<Token>)
+    Poisoned(ParseError<Token>),
+    EnumCheck
 }
 
-impl<Token> fmt::Debug for ParseFailure<Token> {
+impl<Token: Clone> fmt::Debug for ParseFailure<Token> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Peeked(error) => write!(f, "Peeking failed: {:?}", error),
             Self::Poisoned(error) => write!(f, "Parsing failed: {:?}", error),
+            // TODO: implement to say what tokens were expected
+            Self::EnumCheck => write!(f, "Tried to parse <not implemented>, but couldn't"),
         }
     }
 }
@@ -71,33 +84,36 @@ impl<Token> fmt::Debug for ParseFailure<Token> {
 pub type Result<'source, Result, Token: Logos<'source>> = std::result::Result<Result, ParseFailure<Token>>;
 
 pub struct ParseBuffer<'source, Token>
-where Token: Logos<'source> {
-    pub lexer: Peekable<SpannedIter<'source, Token>>,
-    pub last_span: Option<Span>
+where Token: Logos<'source> + Clone {
+    pub lexer: Peekable<IntoIter<ParseToken<Token>>>,
+    pub last_span: Option<Span>,
+    next_token: Option<(Token, Span)>,
+    lifetime_stuff: PhantomData<&'source ()>,
 }
 
-impl<'source, Token> ParseBuffer<'source, Token>
+impl<'source, Token: Clone> ParseBuffer<'source, Token>
 where Token: Logos<'source> {
     pub fn from(lexer: &mut Lexer<'source, Token>) -> Self {
         Self {
-            lexer: lexer.spanned().peekable(),
-            last_span: None
+            // FIXME: implement <not implemented>
+            lexer: lexer.spanned().map(|item| ParseToken::from(item, "<not implemented>".to_string())).collect::<Vec<_>>().into_iter().peekable(),
+            last_span: None,
+            next_token: None,
+            lifetime_stuff: PhantomData
         }
     }
 
-    pub fn parse<G>(&self) -> Result<G, Lexer<'source, Token>> {
-        return G::parse(&self)
+    pub fn parse<G>(&mut self) -> Result<'source, G, Token>
+    where G: Parse<'source, Token> {
+        return G::parse(self)
     }
 
-    pub fn next(&mut self) -> Option<ParserToken<Token>> {
-        let item = self.lexer.next()?;
-        self.last_span = Some(item.1.clone());
-        Some(ParserToken::from(item, self.slice()))
+    pub fn next(&mut self) -> Option<ParseToken<Token>> {
+        self.lexer.next()
     }
 
-    pub fn peek(&mut self) -> Option<ParserToken<Token>> {
-        let item = self.lexer.peek()?;
-        Some(ParserToken::from(item, self.slice()))
+    pub fn peek(&mut self) -> Option<&ParseToken<Token>> {
+        self.lexer.peek()
     }
 
     pub fn slice(&self) -> String {
@@ -115,7 +131,7 @@ where Token: Logos<'source> {
 
     pub fn peek_span(&mut self) -> Span {
         if let Some(item) = self.lexer.peek() {
-            item.1.clone()
+            item.span()
         } else {
             let end = self.span().end;
             end..end
@@ -124,7 +140,7 @@ where Token: Logos<'source> {
 }
 
 pub trait Parse<'source, Token>
-where Token: Logos<'source>, Self: Sized {
+where Token: Logos<'source> + Clone, Self: Sized {
     fn parse(input: &mut ParseBuffer<'source, Token>) -> Result<'source, Self, Token>;
 
     fn span(&self) -> Span;

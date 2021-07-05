@@ -32,80 +32,6 @@ fn impl_node_type_macro(name: &Ident) -> TokenStream {
     gen.into()
 }
 
-// #[proc_macro]
-// pub fn parse(input: TokenStream) -> TokenStream {
-//     let result = parse_macro_input!(input as ParseMacro);
-//     result.result
-// }
-//
-// struct ParseMacro {
-//     result: TokenStream
-// }
-//
-// struct ToTokensTokenStream {
-//     token_stream: TokenStream
-// }
-//
-// impl ToTokensTokenStream {
-//     fn from(tokens: TokenStream) -> Self {
-//         Self { token_stream: tokens }
-//     }
-// }
-//
-// impl ToTokens for ToTokensTokenStream {
-//     fn to_tokens(&self, tokens: &mut TokenStream2) {
-//         let ts = TokenStream2::from(self.token_stream);
-//         tokens.append_all(ts);
-//     }
-// }
-//
-// impl Parse for ParseMacro {
-//     fn parse(input: ParseStream) -> syn::Result<Self> {
-//         let lexer: Expr = input.parse()?;
-//         input.parse::<Token![,]>()?;
-//         let content;
-//         braced!(content in input);
-//
-//         let new = TokenStream2::new();
-//         content.step(|token| {
-//             if let Ok(parsefn) = content.parse::<ParseFn>() {
-//                 let name = parsefn.name;
-//                 let args = ToTokensTokenStream::from(parsefn.args);
-//                 let replacement = quote! {
-//                     #name!(#args)
-//                 };
-//                 new.append_all(replacement)
-//             } else {
-//                 new.append(token.token_stream());
-//             }
-//             Ok(())
-//         });
-//
-//         Ok(Self {
-//             result: new
-//         })
-//     }
-// }
-//
-// struct ParseFn {
-//     at: Token![@],
-//     name: Ident,
-//     args: TokenStream,
-//     paren_token: Paren
-// }
-//
-// impl Parse for ParseFn {
-//     fn parse(input: ParseStream) -> syn::Result<Self> {
-//         let args;
-//         Ok(Self {
-//             at: input.parse()?,
-//             name: input.parse()?,
-//             paren_token: parenthesized!(args in input),
-//             args: args.parse()?
-//         })
-//     }
-// }
-
 #[proc_macro_attribute]
 pub fn node(args: TokenStream, body: TokenStream) -> TokenStream {
     unimplemented!()
@@ -127,29 +53,16 @@ pub fn node_enum_derive(input: TokenStream) -> TokenStream {
     }
 }
 
-struct EnumVariant {
+#[derive(Clone)]
+struct EnumVariant
+where Self: Sized {
     name: Ident,
     node: Type,
 }
 
-impl ToTokens for EnumVariant {
-    fn to_tokens(&self, tokens: &mut TokenStream2) {
-        let node = &self.node;
-        let name = &self.name;
-        let my_tokens = quote! {
-            let result = #node::parse(input);
-            if let Ok(parsed) = result {
-                return Some(Self::#name(parsed));
-            }
-        };
-        tokens.append_all(my_tokens);
-    }
-}
-
-
 fn impl_node_enum_macro(name: &Ident, data: &DataEnum) -> TokenStream {
-    let variants: Box<dyn Iterator<Item=EnumVariant>> = Box::new(data.variants.clone().into_iter().map(|variant| {
-        let variant_id = variant.ident;
+    let enum_variants = data.variants.iter().map(|variant| {
+        let variant_id = variant.ident.clone();
         match variant.fields {
             syn::Fields::Unnamed(ref fields) => {
                 let field = fields.unnamed.iter().next().expect("NodeEnums must have a value with Node implementation");
@@ -161,15 +74,47 @@ fn impl_node_enum_macro(name: &Ident, data: &DataEnum) -> TokenStream {
             },
             _ => panic!("NodeEnums must have a value with Node implementation")
         }
-    }));
+    });
+
+    let variants_parse = enum_variants
+        .clone()
+        .map(|variant| {
+            let node = &variant.node;
+            let name = &variant.name;
+            quote! {
+                let result = #node::parse(input);
+                if let Ok(parsed) = result {
+                    return Ok(Self::#name(parsed));
+                } else if let Err(err @ crate::parser::ParseFailure::Poisoned(_)) = result {
+                    return Err(err);
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let variants_span = enum_variants
+        .map(|variant| {
+            let node = &variant.node;
+            let name = &variant.name;
+            quote! {
+                Self::#name(ref value) => value.span(),
+            }
+        })
+        .collect::<Vec<_>>();;
 
     let my_enum = name;
 
     let gen = quote! {
-        impl NodeEnum for #my_enum {
-            fn parse_any(input: &mut ParseBuffer) -> Option<Self> {
-                #(#variants)*
-                None
+        impl<'source> Parse<'source, Token> for #my_enum {
+            fn parse(input: &mut ParseBuffer) -> crate::token::Result<'source, Self> {
+                #(#variants_parse)*
+                Err(crate::parser::ParseFailure::EnumCheck)
+            }
+
+            fn span(&self) -> Span {
+                match *self {
+                    #(#variants_span)*
+                }
             }
         }
     };
