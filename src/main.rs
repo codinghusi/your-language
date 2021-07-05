@@ -23,15 +23,15 @@ fn main() -> Result<'static, ()> {
     ";
 
     let mut lexer = Token::lexer(code);
-    let mut buffer = crate::parser::ParseBuffer::from(&mut lexer);
+    let mut buffer = crate::parser::ParseBuffer::from(lexer);
 
     let span;
     spanned!(span, buffer, {
-        let identifier: String;
-        let token = token!(buffer, Token::Identifier(identifier))?;
+        let (name, token) = token!(buffer, Token::Identifier(identifier) => identifier)?;
+        println!("name: {}", name);
     });
 
-    println!("span: {:?}, slice: {}", span, token.slice);
+    // println!("span: {:?}, slice: {}", span, token.slice);
 
     Ok(())
 }

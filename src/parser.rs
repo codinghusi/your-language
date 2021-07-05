@@ -91,9 +91,9 @@ where Token: Logos<'source> + Clone {
     lifetime_stuff: PhantomData<&'source ()>,
 }
 
-impl<'source, Token: Clone> ParseBuffer<'source, Token>
-where Token: Logos<'source> {
-    pub fn from(lexer: &mut Lexer<'source, Token>) -> Self {
+impl<'source, Token> ParseBuffer<'source, Token>
+where Token: Logos<'source> + Clone {
+    pub fn from(lexer: Lexer<'source, Token>) -> Self {
         Self {
             // FIXME: implement <not implemented>
             lexer: lexer.spanned().map(|item| ParseToken::from(item, "<not implemented>".to_string())).collect::<Vec<_>>().into_iter().peekable(),

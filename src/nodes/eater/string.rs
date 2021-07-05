@@ -13,8 +13,7 @@ pub struct StringEater {
 
 impl<'source> Parse<'source, Token> for StringEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let str: String;
-        let token = token!(input, Token::String(str))?;
+        let (str, token) = token!(input, Token::String(str) => str)?;
 
         Ok(StringEater {
             value: str.clone(),

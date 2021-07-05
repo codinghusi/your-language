@@ -40,7 +40,7 @@ pub enum Token {
 
     #[regex(r"[ \t\n]+", logos::skip)]
     #[error]
-    Error
+    Error,
 }
 
 
@@ -53,9 +53,9 @@ pub type ParseFailure = parser::ParseFailure<Token>;
 #[macro_export]
 macro_rules! spanned {
     ($destination:ident, $buffer:expr, {$($body:tt)*}) => {
-        let start = $buffer.peek_span().start;
+        let start = $buffer.peek_span().start.clone();
         $($body)*
-        let end = $buffer.peek_span().end;
+        let end = $buffer.peek_span().end.clone();
         $destination = start..end;
     };
 }
@@ -71,6 +71,55 @@ macro_rules! identifier {
 macro_rules! keyword {
     ($buffer:ident, $name:ident) => {
         token!($buffer, crate::token::Token::Identifier(stringify!($name)))
+    };
+}
+
+#[macro_export]
+macro_rules! token {
+    ($buffer:ident, $match:pat) => {
+        {
+            match token!($buffer, $match => ()) {
+                Ok(tuple) => Ok(tuple.1),
+                Err(err) => Err(err)
+            }
+        }
+    };
+
+    ($buffer:ident, $match:pat => $ret:expr) => {
+        {
+            let peek = $buffer.peek();
+            if let Some(_) = peek {
+                if std::matches!(peek, Some(crate::parser::ParseToken { token: $match, .. })) {
+                    if let Some(token) = $buffer.next() {
+                        if let $match = token.token.clone() {
+                            Ok(($ret, token))
+                        } else {
+                            unreachable!();
+                        }
+                    } else {
+                        unreachable!();
+                    }
+                } else {
+                    let token = $buffer.peek().unwrap();
+                    Err(
+                        crate::token::ParseFailure::Poisoned(
+                            crate::token::ParseError::Unexpected {
+                                expected: vec![stringify!($match).to_string()],
+                                got: (*token).clone()
+                            }
+                        )
+                    )
+                }
+            } else {
+                Err(
+                    crate::token::ParseFailure::Poisoned(
+                        crate::token::ParseError::EOF {
+                            expected: vec![stringify!($variant).to_string()]
+                        }
+                    )
+                )
+            }
+        }
     };
 }
 
@@ -92,10 +141,10 @@ macro_rules! braced {
 }
 
 #[macro_export]
-macro_rules! token {
-    ($buffer:ident, try $variant:pat) => {
+macro_rules! first {
+    ($stuff:expr) => {
         {
-            let result = token!($buffer, $variant);
+            let result = $stuff;
             if let Ok(token) = result {
                 Ok(token)
             } else if let Err(ParseFailure::Posioned(failure)) = result {
@@ -105,31 +154,6 @@ macro_rules! token {
             }
         }
     };
-
-($buffer:ident, $variant:pat) => {
-    if let Some(token) = $buffer.peek() {
-        if let $variant = &token.token {
-            Ok($buffer.next().unwrap())
-        } else {
-            Err(
-                crate::token::ParseFailure::Poisoned(
-                    crate::token::ParseError::Unexpected {
-                        expected: vec![stringify!($variant).to_string()],
-                        got: (*token).clone()
-                    }
-                )
-            )
-        }
-    } else {
-        Err(
-            crate::token::ParseFailure::Poisoned(
-                crate::token::ParseError::EOF {
-                    expected: vec![stringify!($variant).to_string()]
-                }
-            )
-        )
-    }
-};
 }
 
 //     (result poisoned, $token:expr, $variant:expr) => {

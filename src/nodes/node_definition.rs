@@ -22,8 +22,7 @@ impl<'source> Parse<'source, Token> for NodeDefinitionNode {
 
         let span;
         spanned!(span, input, {
-            let identifier;
-            token!(input, Token::Identifier(identifier))?;
+            let identifier: IdentifierNode = input.parse()?;
             let block: NodeBlockNode = input.parse()?;
         });
 
@@ -33,19 +32,6 @@ impl<'source> Parse<'source, Token> for NodeDefinitionNode {
             block,
             span
         })
-
-
-        // let start = lexer.span().start;
-        // KeywordNode::parse(lexer)?.test_kw("node")?;
-        // let identifier = IdentifierNode::parse(lexer)?;
-        // let block = NodeBlockNode::parse(lexer)?;
-        // let end = lexer.span().end;
-        // let span = start..end;
-        // Ok(NodeDefinitionNode {
-        //     name: identifier,
-        //     block,
-        //     span
-        // })
     }
 
     fn span(&self) -> Span {

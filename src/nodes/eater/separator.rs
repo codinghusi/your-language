@@ -53,7 +53,7 @@ impl SeparationEater {
             },
 
 
-            _ => panic!(format!("{} is not a separator eater", raw))
+            _ => panic!("{} is not a separator eater", raw)
         }
     }
 }

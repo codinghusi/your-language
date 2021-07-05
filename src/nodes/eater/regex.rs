@@ -13,8 +13,7 @@ pub struct RegexEater {
 
 impl<'source> Parse<'source, Token> for RegexEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let str;
-        token!(input, Token::Regex(str));
+        let (str,_) = token!(input, Token::Regex(str) => str)?;
 
         Ok(RegexEater {
             value: str,

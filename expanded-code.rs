@@ -1343,7 +1343,7 @@ mod nodes {
                 }
                 Err(crate::parser::ParseFailure::EnumCheck)
             }
-            fn span(&self) -> Span {
+            fn span(&self) -> logos::Span {
                 match *self {
                     Self::VariableDeclaration(ref value) => value.span(),
                 }
@@ -1359,59 +1359,104 @@ mod nodes {
         }
         impl<'source> Parse<'source, Token> for NodeBlockNode {
             fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-                if let Some(token) = input.peek() {
-                    if let crate::token::Token::CurlyBrace(crate::token::Brace::Open) = &token.token
-                    {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "crate::token::Token::CurlyBrace(crate::token::Brace::Open)"
-                                        .to_string(),
-                                ]),
-                                got: (*token).clone(),
-                            },
-                        ))
+                {
+                    match {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token:
+                                        crate::token::Token::CurlyBrace(crate::token::Brace::Open),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let crate::token::Token::CurlyBrace(
+                                        crate::token::Brace::Open,
+                                    ) = token.token.clone()
+                                    {
+                                        Ok(((), token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err (crate :: token :: ParseFailure :: Poisoned (crate :: token :: ParseError :: Unexpected { expected : < [_] > :: into_vec (box ["crate::token::Token::CurlyBrace(crate::token::Brace::Open)" . to_string ()]) , got : (* token) . clone () , }))
+                            }
+                        } else {
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                },
+                            ))
+                        }
+                    } {
+                        Ok(tuple) => Ok(tuple.1),
+                        Err(err) => Err(err),
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box [
-                                "crate::token::Token::CurlyBrace(crate::token::Brace::Open)"
-                                    .to_string(),
-                            ]),
-                        },
-                    ))
                 };
                 while let Ok(node) = BlockItem::parse(input) {
                     ::core::panicking::panic("not implemented");
                 }
-                if let Some(token) = input.peek() {
-                    if let crate::token::Token::CurlyBrace(crate::token::Brace::Close) =
-                        &token.token
-                    {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "crate::token::Token::CurlyBrace(crate::token::Brace::Close)"
-                                        .to_string(),
-                                ]),
-                                got: (*token).clone(),
-                            },
-                        ))
+                {
+                    match {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token:
+                                        crate::token::Token::CurlyBrace(crate::token::Brace::Close),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let crate::token::Token::CurlyBrace(
+                                        crate::token::Brace::Close,
+                                    ) = token.token.clone()
+                                    {
+                                        Ok(((), token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err (crate :: token :: ParseFailure :: Poisoned (crate :: token :: ParseError :: Unexpected { expected : < [_] > :: into_vec (box ["crate::token::Token::CurlyBrace(crate::token::Brace::Close)" . to_string ()]) , got : (* token) . clone () , }))
+                            }
+                        } else {
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                },
+                            ))
+                        }
+                    } {
+                        Ok(tuple) => Ok(tuple.1),
+                        Err(err) => Err(err),
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box [
-                                "crate::token::Token::CurlyBrace(crate::token::Brace::Close)"
-                                    .to_string(),
-                            ]),
-                        },
-                    ))
                 };
                 Ok(Self { span: 0..1 })
             }
@@ -1441,7 +1486,7 @@ mod nodes {
                 }
                 Err(crate::parser::ParseFailure::EnumCheck)
             }
-            fn span(&self) -> Span {
+            fn span(&self) -> logos::Span {
                 match *self {
                     Self::Definition(ref value) => value.span(),
                 }
@@ -1490,30 +1535,55 @@ mod nodes {
         }
         impl<'source> Parse<'source, Token> for IdentifierNode {
             fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-                let name;
-                let token = if let Some(token) = input.peek() {
-                    if let Token::Identifier(name) = &token.token {
-                        Ok(input.next().unwrap())
+                let (name, token) = {
+                    let peek = input.peek();
+                    if let Some(_) = peek {
+                        if match peek {
+                            Some(crate::parser::ParseToken {
+                                token: Token::Identifier(name),
+                                ..
+                            }) => true,
+                            _ => false,
+                        } {
+                            if let Some(token) = input.next() {
+                                if let Token::Identifier(name) = token.token.clone() {
+                                    Ok((name, token))
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                {
+                                    ::core::panicking::panic(
+                                        "internal error: entered unreachable code",
+                                    )
+                                };
+                            }
+                        } else {
+                            let token = input.peek().unwrap();
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::Unexpected {
+                                    expected: <[_]>::into_vec(box [
+                                        "Token::Identifier(name)".to_string()
+                                    ]),
+                                    got: (*token).clone(),
+                                },
+                            ))
+                        }
                     } else {
                         Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "Token::Identifier(name)".to_string()
-                                ]),
-                                got: (*token).clone(),
+                            crate::token::ParseError::EOF {
+                                expected: <[_]>::into_vec(box ["$ variant".to_string()]),
                             },
                         ))
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box ["Token::Identifier(name)".to_string()]),
-                        },
-                    ))
                 }?;
                 Ok(IdentifierNode {
                     name,
-                    span: token._span,
+                    span: token.span(),
                 })
             }
             fn span(&self) -> Span {
@@ -1545,32 +1615,10 @@ mod nodes {
         impl<'source> Parse<'source, Token> for NodeDefinitionNode {
             fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
                 let span;
-                let start = input.peek_span().start;
-                let identifier;
-                if let Some(token) = input.peek() {
-                    if let Token::Identifier(identifier) = &token.token {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "Token::Identifier(identifier)".to_string()
-                                ]),
-                                got: (*token).clone(),
-                            },
-                        ))
-                    }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box [
-                                "Token::Identifier(identifier)".to_string()
-                            ]),
-                        },
-                    ))
-                }?;
+                let start = input.peek_span().start.clone();
+                let identifier: IdentifierNode = input.parse()?;
                 let block: NodeBlockNode = input.parse()?;
-                let end = input.peek_span().end;
+                let end = input.peek_span().end.clone();
                 span = (start..end);
                 Ok(NodeDefinitionNode {
                     name: identifier,
@@ -1605,75 +1653,152 @@ mod nodes {
         impl<'source> Parse<'source, Token> for VariableDeclarationNode {
             fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
                 let name: IdentifierNode = input.parse()?;
-                if let Some(token) = input.peek() {
-                    if let crate::token::Token::RoundedBrace(crate::token::Brace::Open) =
-                        &token.token
-                    {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "crate::token::Token::RoundedBrace(crate::token::Brace::Open)"
-                                        .to_string(),
-                                ]),
-                                got: (*token).clone(),
-                            },
-                        ))
+                {
+                    match {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token:
+                                        crate::token::Token::RoundedBrace(crate::token::Brace::Open),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let crate::token::Token::RoundedBrace(
+                                        crate::token::Brace::Open,
+                                    ) = token.token.clone()
+                                    {
+                                        Ok(((), token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err (crate :: token :: ParseFailure :: Poisoned (crate :: token :: ParseError :: Unexpected { expected : < [_] > :: into_vec (box ["crate::token::Token::RoundedBrace(crate::token::Brace::Open)" . to_string ()]) , got : (* token) . clone () , }))
+                            }
+                        } else {
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                },
+                            ))
+                        }
+                    } {
+                        Ok(tuple) => Ok(tuple.1),
+                        Err(err) => Err(err),
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box [
-                                "crate::token::Token::RoundedBrace(crate::token::Brace::Open)"
-                                    .to_string(),
-                            ]),
-                        },
-                    ))
                 };
-                if let Some(token) = input.peek() {
-                    if let crate::token::Token::RoundedBrace(crate::token::Brace::Close) =
-                        &token.token
-                    {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box [
-                                    "crate::token::Token::RoundedBrace(crate::token::Brace::Close)"
-                                        .to_string(),
-                                ]),
-                                got: (*token).clone(),
-                            },
-                        ))
+                {
+                    match {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token:
+                                        crate::token::Token::RoundedBrace(crate::token::Brace::Close),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let crate::token::Token::RoundedBrace(
+                                        crate::token::Brace::Close,
+                                    ) = token.token.clone()
+                                    {
+                                        Ok(((), token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err (crate :: token :: ParseFailure :: Poisoned (crate :: token :: ParseError :: Unexpected { expected : < [_] > :: into_vec (box ["crate::token::Token::RoundedBrace(crate::token::Brace::Close)" . to_string ()]) , got : (* token) . clone () , }))
+                            }
+                        } else {
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                },
+                            ))
+                        }
+                    } {
+                        Ok(tuple) => Ok(tuple.1),
+                        Err(err) => Err(err),
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box [
-                                "crate::token::Token::RoundedBrace(crate::token::Brace::Close)"
-                                    .to_string(),
-                            ]),
-                        },
-                    ))
                 };
-                if let Some(token) = input.peek() {
-                    if let Token::Assign = &token.token {
-                        Ok(input.next().unwrap())
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::Unexpected {
-                                expected: <[_]>::into_vec(box ["Token::Assign".to_string()]),
-                                got: (*token).clone(),
-                            },
-                        ))
+                {
+                    match {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token: Token::Assign,
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let Token::Assign = token.token.clone() {
+                                        Ok(((), token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err(crate::token::ParseFailure::Poisoned(
+                                    crate::token::ParseError::Unexpected {
+                                        expected: <[_]>::into_vec(
+                                            box ["Token::Assign".to_string()],
+                                        ),
+                                        got: (*token).clone(),
+                                    },
+                                ))
+                            }
+                        } else {
+                            Err(crate::token::ParseFailure::Poisoned(
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                },
+                            ))
+                        }
+                    } {
+                        Ok(tuple) => Ok(tuple.1),
+                        Err(err) => Err(err),
                     }
-                } else {
-                    Err(crate::token::ParseFailure::Poisoned(
-                        crate::token::ParseError::EOF {
-                            expected: <[_]>::into_vec(box ["Token::Assign".to_string()]),
-                        },
-                    ))
                 };
                 let eater: Eater = input.parse()?;
                 let span = name.span().start..input.span().end;
@@ -1715,33 +1840,56 @@ mod nodes {
             }
             impl<'source> Parse<'source, Token> for NamedEater {
                 fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-                    let name: String;
-                    let name_token = if let Some(token) = input.peek() {
-                        if let Token::EaterName(name) = &token.token {
-                            Ok(input.next().unwrap())
+                    let (name, name_token) = {
+                        let peek = input.peek();
+                        if let Some(_) = peek {
+                            if match peek {
+                                Some(crate::parser::ParseToken {
+                                    token: Token::EaterName(name),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            } {
+                                if let Some(token) = input.next() {
+                                    if let Token::EaterName(name) = token.token.clone() {
+                                        Ok((name, token))
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    {
+                                        ::core::panicking::panic(
+                                            "internal error: entered unreachable code",
+                                        )
+                                    };
+                                }
+                            } else {
+                                let token = input.peek().unwrap();
+                                Err(crate::token::ParseFailure::Poisoned(
+                                    crate::token::ParseError::Unexpected {
+                                        expected: <[_]>::into_vec(box [
+                                            "Token::EaterName(name)".to_string()
+                                        ]),
+                                        got: (*token).clone(),
+                                    },
+                                ))
+                            }
                         } else {
                             Err(crate::token::ParseFailure::Poisoned(
-                                crate::token::ParseError::Unexpected {
-                                    expected: <[_]>::into_vec(box [
-                                        "Token::EaterName(name)".to_string()
-                                    ]),
-                                    got: (*token).clone(),
+                                crate::token::ParseError::EOF {
+                                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
                                 },
                             ))
                         }
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::EOF {
-                                expected: <[_]>::into_vec(box [
-                                    "Token::EaterName(name)".to_string()
-                                ]),
-                            },
-                        ))
                     }?;
                     let eater: EaterItem = input.parse()?;
                     Ok(Self {
                         name: IdentifierNode {
-                            name,
+                            name: name.clone(),
                             span: name_token.span(),
                         },
                         eater,
@@ -1794,25 +1942,56 @@ mod nodes {
             impl<'source> Parse<'source, Token> for StringEater {
                 fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
                     let str: String;
-                    let token = if let Some(token) = input.peek() {
-                        if let Token::String(str) = &token.token {
-                            Ok(input.next().unwrap())
-                        } else {
-                            Err(crate::token::ParseFailure::Poisoned(
-                                crate::token::ParseError::Unexpected {
-                                    expected: <[_]>::into_vec(box [
-                                        "Token::String(str)".to_string()
-                                    ]),
-                                    got: (*token).clone(),
-                                },
-                            ))
+                    let token = {
+                        match {
+                            let peek = input.peek();
+                            if let Some(_) = peek {
+                                if match peek {
+                                    Some(crate::parser::ParseToken {
+                                        token: Token::String(str),
+                                        ..
+                                    }) => true,
+                                    _ => false,
+                                } {
+                                    if let Some(token) = input.next() {
+                                        if let Token::String(str) = token.token.clone() {
+                                            Ok(((), token))
+                                        } else {
+                                            {
+                                                ::core::panicking::panic(
+                                                    "internal error: entered unreachable code",
+                                                )
+                                            };
+                                        }
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    let token = input.peek().unwrap();
+                                    Err(crate::token::ParseFailure::Poisoned(
+                                        crate::token::ParseError::Unexpected {
+                                            expected: <[_]>::into_vec(box [
+                                                "Token::String(str)".to_string()
+                                            ]),
+                                            got: (*token).clone(),
+                                        },
+                                    ))
+                                }
+                            } else {
+                                Err(crate::token::ParseFailure::Poisoned(
+                                    crate::token::ParseError::EOF {
+                                        expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                    },
+                                ))
+                            }
+                        } {
+                            Ok(tuple) => Ok(tuple.1),
+                            Err(err) => Err(err),
                         }
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::EOF {
-                                expected: <[_]>::into_vec(box ["Token::String(str)".to_string()]),
-                            },
-                        ))
                     }?;
                     Ok(StringEater {
                         value: str.clone(),
@@ -1844,25 +2023,56 @@ mod nodes {
             impl<'source> Parse<'source, Token> for RegexEater {
                 fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
                     let str;
-                    if let Some(token) = input.peek() {
-                        if let Token::Regex(str) = &token.token {
-                            Ok(input.next().unwrap())
-                        } else {
-                            Err(crate::token::ParseFailure::Poisoned(
-                                crate::token::ParseError::Unexpected {
-                                    expected: <[_]>::into_vec(
-                                        box ["Token::Regex(str)".to_string()],
-                                    ),
-                                    got: (*token).clone(),
-                                },
-                            ))
+                    {
+                        match {
+                            let peek = input.peek();
+                            if let Some(_) = peek {
+                                if match peek {
+                                    Some(crate::parser::ParseToken {
+                                        token: Token::Regex(str),
+                                        ..
+                                    }) => true,
+                                    _ => false,
+                                } {
+                                    if let Some(token) = input.next() {
+                                        if let Token::Regex(str) = token.token.clone() {
+                                            Ok(((), token))
+                                        } else {
+                                            {
+                                                ::core::panicking::panic(
+                                                    "internal error: entered unreachable code",
+                                                )
+                                            };
+                                        }
+                                    } else {
+                                        {
+                                            ::core::panicking::panic(
+                                                "internal error: entered unreachable code",
+                                            )
+                                        };
+                                    }
+                                } else {
+                                    let token = input.peek().unwrap();
+                                    Err(crate::token::ParseFailure::Poisoned(
+                                        crate::token::ParseError::Unexpected {
+                                            expected: <[_]>::into_vec(box [
+                                                "Token::Regex(str)".to_string()
+                                            ]),
+                                            got: (*token).clone(),
+                                        },
+                                    ))
+                                }
+                            } else {
+                                Err(crate::token::ParseFailure::Poisoned(
+                                    crate::token::ParseError::EOF {
+                                        expected: <[_]>::into_vec(box ["$ variant".to_string()]),
+                                    },
+                                ))
+                            }
+                        } {
+                            Ok(tuple) => Ok(tuple.1),
+                            Err(err) => Err(err),
                         }
-                    } else {
-                        Err(crate::token::ParseFailure::Poisoned(
-                            crate::token::ParseError::EOF {
-                                expected: <[_]>::into_vec(box ["Token::Regex(str)".to_string()]),
-                            },
-                        ))
                     };
                     Ok(RegexEater {
                         value: str,
@@ -2008,7 +2218,7 @@ mod nodes {
                 }
                 Err(crate::parser::ParseFailure::EnumCheck)
             }
-            fn span(&self) -> Span {
+            fn span(&self) -> logos::Span {
                 match *self {
                     Self::Named(ref value) => value.span(),
                     Self::Unnamed(ref value) => value.span(),
@@ -2042,7 +2252,7 @@ mod nodes {
                 }
                 Err(crate::parser::ParseFailure::EnumCheck)
             }
-            fn span(&self) -> Span {
+            fn span(&self) -> logos::Span {
                 match *self {
                     Self::String(ref value) => value.span(),
                     Self::Regex(ref value) => value.span(),
@@ -2287,7 +2497,6 @@ mod parser {
         fn span(&self) -> Span;
     }
 }
-mod expanded_code {}
 use crate::node::{NodeType, NodeEnum};
 use crate::token::{Token, ParseBuffer, Result};
 use crate::nodes::document::{DocumentNode};
@@ -2301,38 +2510,61 @@ fn main() -> Result<'static, ()> {
     let mut lexer = Token::lexer(code);
     let mut buffer = crate::parser::ParseBuffer::from(&mut lexer);
     let span;
-    let start = buffer.peek_span().start;
-    let identifier: String;
-    let token = if let Some(token) = buffer.peek() {
-        if let Token::Identifier(identifier) = &token.token {
-            Ok(buffer.next().unwrap())
+    let start = buffer.peek_span().start.clone();
+    let (name, token) = {
+        let peek = buffer.peek();
+        if let Some(_) = peek {
+            if match peek {
+                Some(crate::parser::ParseToken {
+                    token: Token::Identifier(identifier),
+                    ..
+                }) => true,
+                _ => false,
+            } {
+                if let Some(token) = buffer.next() {
+                    if let Token::Identifier(identifier) = token.token.clone() {
+                        Ok((identifier, token))
+                    } else {
+                        {
+                            ::core::panicking::panic("internal error: entered unreachable code")
+                        };
+                    }
+                } else {
+                    {
+                        ::core::panicking::panic("internal error: entered unreachable code")
+                    };
+                }
+            } else {
+                let token = buffer.peek().unwrap();
+                Err(crate::token::ParseFailure::Poisoned(
+                    crate::token::ParseError::Unexpected {
+                        expected: <[_]>::into_vec(
+                            box ["Token::Identifier(identifier)".to_string()],
+                        ),
+                        got: (*token).clone(),
+                    },
+                ))
+            }
         } else {
             Err(crate::token::ParseFailure::Poisoned(
-                crate::token::ParseError::Unexpected {
-                    expected: <[_]>::into_vec(box ["Token::Identifier(identifier)".to_string()]),
-                    got: (*token).clone(),
+                crate::token::ParseError::EOF {
+                    expected: <[_]>::into_vec(box ["$ variant".to_string()]),
                 },
             ))
         }
-    } else {
-        Err(crate::token::ParseFailure::Poisoned(
-            crate::token::ParseError::EOF {
-                expected: <[_]>::into_vec(box ["Token::Identifier(identifier)".to_string()]),
-            },
-        ))
     }?;
-    let end = buffer.peek_span().end;
-    span = (start..end);
     {
         ::std::io::_print(::core::fmt::Arguments::new_v1(
-            &["span: ", ", slice: ", "\n"],
-            &match (&span, &token.slice) {
-                (arg0, arg1) => [
-                    ::core::fmt::ArgumentV1::new(arg0, ::core::fmt::Debug::fmt),
-                    ::core::fmt::ArgumentV1::new(arg1, ::core::fmt::Display::fmt),
-                ],
+            &["name: ", "\n"],
+            &match (&name,) {
+                (arg0,) => [::core::fmt::ArgumentV1::new(
+                    arg0,
+                    ::core::fmt::Display::fmt,
+                )],
             },
         ));
     };
+    let end = buffer.peek_span().end.clone();
+    span = (start..end);
     Ok(())
 }

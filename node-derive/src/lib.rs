@@ -111,7 +111,7 @@ fn impl_node_enum_macro(name: &Ident, data: &DataEnum) -> TokenStream {
                 Err(crate::parser::ParseFailure::EnumCheck)
             }
 
-            fn span(&self) -> Span {
+            fn span(&self) -> logos::Span {
                 match *self {
                     #(#variants_span)*
                 }

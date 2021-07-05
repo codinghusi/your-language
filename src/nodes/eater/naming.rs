@@ -18,18 +18,18 @@ pub struct NamedEater {
 
 impl<'source> Parse<'source, Token> for NamedEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let name: String;
-        let name_token = token!(input, Token::EaterName(name))?;
+        let (name, name_token) = token!(input, Token::EaterName(name) => name)?;
 
         let eater: EaterItem = input.parse()?;
+        let eater_span = eater.span();
 
         Ok(Self {
             name: IdentifierNode {
-                name,
+                name: name.clone(),
                 span: name_token.span()
             },
+            span: eater_span,
             eater,
-            span: eater.span()
         })
     }
 
@@ -48,8 +48,8 @@ impl<'source> Parse<'source, Token> for UnnamedEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
         let eater: EaterItem = input.parse()?;
         Ok(Self {
+            span: eater.span(),
             eater,
-            span: eater.span()
         })
     }
 
