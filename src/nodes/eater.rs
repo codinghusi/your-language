@@ -16,13 +16,13 @@ pub mod regex;
 pub mod function;
 pub mod separator;
 
-#[derive(NodeEnum)]
+#[derive(NodeEnum, Debug)]
 pub enum Eater {
     Named(NamedEater),
     Unnamed(UnnamedEater)
 }
 
-#[derive(NodeEnum)]
+#[derive(NodeEnum, Debug)]
 pub enum EaterItem {
     String(StringEater),
     Regex(RegexEater),

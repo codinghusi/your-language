@@ -6,7 +6,7 @@ use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::eater::EaterNode;
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct FunctionEater {
     name: IdentifierNode,
     span: Span

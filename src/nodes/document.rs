@@ -6,29 +6,24 @@ use crate::nodes::node_definition::NodeDefinitionNode;
 use std::borrow::Borrow;
 use crate::parser::Parse;
 
-#[derive(NodeEnum)]
-pub enum Document {
+#[derive(NodeEnum, Debug)]
+pub enum DocumentItem {
     // Import(ImportNode),
     Definition(NodeDefinitionNode)
 }
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct DocumentNode {
-    pub items: Vec<Document>,
+    pub items: Vec<DocumentItem>,
     span: Span
 }
 
 impl<'source> Parse<'source, Token> for DocumentNode {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        // todo!("Implement a more generalized function for that common thing");
-        let mut items = vec![];
-        let start = input.span().end;
-        let mut end = start;
-        while let Ok(item) = Document::parse(input) {
-            items.push(item);
-            end = input.span().end;
-        }
-        let span = start..end;
+        let span;
+        spanned!(span, input, {
+            let items = list!(input, DocumentItem);
+        });
         Ok(DocumentNode {
             items,
             span

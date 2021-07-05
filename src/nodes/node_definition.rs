@@ -10,11 +10,11 @@ use std::iter::Peekable;
 use crate::token;
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct NodeDefinitionNode {
-    name: IdentifierNode,
-    block: NodeBlockNode,
-    span: Span
+    pub name: IdentifierNode,
+    pub block: NodeBlockNode,
+    pub span: Span
 }
 
 impl<'source> Parse<'source, Token> for NodeDefinitionNode {
@@ -22,12 +22,12 @@ impl<'source> Parse<'source, Token> for NodeDefinitionNode {
 
         let span;
         spanned!(span, input, {
+            keyword!(input, "node")?;
             let identifier: IdentifierNode = input.parse()?;
             let block: NodeBlockNode = input.parse()?;
         });
 
-
-        Ok(NodeDefinitionNode {
+        Ok(Self {
             name: identifier,
             block,
             span

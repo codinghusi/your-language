@@ -5,7 +5,7 @@ use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::EaterNode;
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct StringEater {
     value: String,
     span: Span
@@ -13,7 +13,7 @@ pub struct StringEater {
 
 impl<'source> Parse<'source, Token> for StringEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (str, token) = token!(input, Token::String(str) => str)?;
+        let (str, token) = first!(token!(input, Token::String(str) => str))?;
 
         Ok(StringEater {
             value: str.clone(),

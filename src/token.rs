@@ -4,12 +4,12 @@ use std::iter::Peekable;
 use std::fmt;
 use crate::parser;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Brace {
     Open, Close
 }
 
-#[derive(Logos, Clone)]
+#[derive(Logos, Clone, Debug)]
 pub enum Token {
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Identifier(String),
@@ -23,16 +23,16 @@ pub enum Token {
     #[token("=>")]
     Assign,
 
-    #[regex(r"/([^\\/]|\\.)+/",  |lex| lex.slice().to_string())]
+    #[regex(r#"/([^/]|\\\\|\\.)+/"#,  |lex| lex.slice().to_string())]
     Regex(String),
 
-    #[regex(r"/[-~][!>]?>/", |lex| SeparationEater::from_raw(lex.slice()))]
+    #[regex(r"[-~][!>]?>", |lex| SeparationEater::from_raw(lex.slice()))]
     Separator(SeparationEater),
 
-    #[regex("/\"([^\"])+\"/", |lex| lex.slice().to_string())]
+    #[regex(r#""([^"])+""#, |lex| lex.slice().to_string())]
     String(String),
 
-    #[regex("([a-zA-Z_][a-zA-Z0-9_]*):", |lex| lex.slice().to_string())]
+    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", |lex| lex.slice().to_string())]
     EaterName(String),
 
     #[token(";")]
@@ -49,6 +49,25 @@ pub type Result<'source, T> = parser::Result<'source, T, Token>;
 pub type ParseToken = parser::ParseToken<Token>;
 pub type ParseError = parser::ParseError<Token>;
 pub type ParseFailure = parser::ParseFailure<Token>;
+
+#[macro_export]
+macro_rules! list {
+    ($buffer:expr, $node:ty $(, $separator:pat)?) => {
+        {
+            let mut items = vec![];
+            while let Ok(item) = <$node>::parse($buffer) {
+                items.push(item);
+                $(
+                    if token!($buffer, $separator).is_err() {
+                        break;
+                    }
+                )?
+            }
+            items
+        }
+    };
+}
+
 
 #[macro_export]
 macro_rules! spanned {
@@ -70,8 +89,10 @@ macro_rules! identifier {
 #[macro_export]
 macro_rules! keyword {
     ($buffer:ident, $name:expr) => {
-        let name = $name.to_string();
-        token!($buffer, crate::token::Token::Identifier(name))
+        {
+            let name = $name.to_string();
+            token!($buffer, crate::token::Token::Identifier(name))
+        }
     };
 }
 
@@ -127,9 +148,9 @@ macro_rules! token {
 #[macro_export]
 macro_rules! braced {
     ($buffer:ident, ty $type:ident, {$($body:tt)*}) => {
-        token!($buffer, crate::token::Token::$type(crate::token::Brace::Open));
+        token!($buffer, crate::token::Token::$type(crate::token::Brace::Open))?;
         $($body)*
-        token!($buffer, crate::token::Token::$type(crate::token::Brace::Close));
+        token!($buffer, crate::token::Token::$type(crate::token::Brace::Close))?;
     };
 
     ($buffer:ident, curly {$($body:tt)*}) => {
@@ -148,57 +169,11 @@ macro_rules! first {
             let result = $stuff;
             if let Ok(token) = result {
                 Ok(token)
-            } else if let Err(ParseFailure::Posioned(failure)) = result {
-                Err(ParseFailure::Peeked(failure))
+            } else if let Err(crate::parser::ParseFailure::Poisoned(failure)) = result {
+                Err(crate::parser::ParseFailure::Peeked(failure))
             } else {
-                token
+                result
             }
         }
     };
 }
-
-//     (result poisoned, $token:expr, $variant:expr) => {
-//
-//     };
-//
-//     (result eof, $variant:expr) => {
-//
-//     };
-
-// pub trait LexerHelper {
-//     fn keyword(&mut self, name: &str) -> Result<&str, String>;
-//     fn identifier(&mut self) -> Result<&str, String>;
-// }
-
-// impl LexerHelper for Lexer<Token> {
-//     fn keyword(&mut self, name: &str) -> Result<&str, String> {
-//         let token = self.next();
-//         if let Some(Self::Identifier(identifier)) = token {
-//             if name.eq(identifier) {
-//                 Ok(identifier)
-//             } else {
-//                 Err(format!("Expected keyword '{}', but got '{}'", name, identifier))
-//             }
-//         } else {
-//             Err(format!("Expected keyword '{}', but got token '{}'", name, token.slice()))
-//         }
-//     }
-//
-//     fn identifier(&mut self) -> Result<&str, String> {
-//         let token = self.next();
-//         if let Some(Self::Identifier(identifier)) = token {
-//             Ok(identifier)
-//         } else {
-//             Err(format!("Expected identifier, but got token '{}'", token.slice()))
-//         }
-//     }
-// }
-
-// macro_rules! expect {
-//     ($lex:ident, $token:ident) => {
-//         let token = $lex.next();
-//         if let Token::$token(val) = token {
-//
-//         }
-//     }
-// }

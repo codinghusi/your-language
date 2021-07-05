@@ -7,7 +7,7 @@ use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::Eater;
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct VariableDeclarationNode {
     name: IdentifierNode,
     eater: Eater,
@@ -16,16 +16,20 @@ pub struct VariableDeclarationNode {
 
 impl<'source> Parse<'source, Token> for VariableDeclarationNode {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let name: IdentifierNode = input.parse()?;
 
-        // parses "() => "
-        braced!(input, rounded {});
-        token!(input, Token::Assign);
+        let span;
+        spanned!(span, input, {
+            let name: IdentifierNode = input.parse()?;
 
-        // parses the actual eater
-        let eater: Eater = input.parse()?;
+            // parses "() => "
+            braced!(input, rounded {});
+            token!(input, Token::Assign);
 
-        let span = name.span().start..input.span().end;
+            // parses the actual eater
+            let eater: Eater = input.parse()?;
+
+            token!(input, Token::Semicolon)?;
+        });
 
         Ok(Self {
             name,

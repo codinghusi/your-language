@@ -9,7 +9,7 @@ use crate::node::{NodeEnum, NodeType};
 use crate::token::{Token, ParseBuffer, Result};
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct NamedEater {
     name: IdentifierNode,
     eater: EaterItem,
@@ -18,14 +18,14 @@ pub struct NamedEater {
 
 impl<'source> Parse<'source, Token> for NamedEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (name, name_token) = token!(input, Token::EaterName(name) => name)?;
+        let (name, name_token) = first!(token!(input, Token::EaterName(name) => name))?;
 
         let eater: EaterItem = input.parse()?;
         let eater_span = eater.span();
 
         Ok(Self {
             name: IdentifierNode {
-                name: name.clone(),
+                value: name.clone(),
                 span: name_token.span()
             },
             span: eater_span,
@@ -38,7 +38,7 @@ impl<'source> Parse<'source, Token> for NamedEater {
     }
 }
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct UnnamedEater {
     eater: EaterItem,
     span: Span

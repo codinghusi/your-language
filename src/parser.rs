@@ -92,11 +92,14 @@ where Token: Logos<'source> + Clone {
 }
 
 impl<'source, Token> ParseBuffer<'source, Token>
-where Token: Logos<'source> + Clone {
+where Token: Logos<'source> + Clone + Debug {
     pub fn from(lexer: Lexer<'source, Token>) -> Self {
         Self {
             // FIXME: implement <not implemented>
-            lexer: lexer.spanned().map(|item| ParseToken::from(item, "<not implemented>".to_string())).collect::<Vec<_>>().into_iter().peekable(),
+            lexer: lexer.spanned().map(|item| {
+                let slice = format!("{:?}", item.0);
+                ParseToken::from(item, slice)
+            }).collect::<Vec<_>>().into_iter().peekable(),
             last_span: None,
             next_token: None,
             lifetime_stuff: PhantomData
@@ -140,7 +143,7 @@ where Token: Logos<'source> + Clone {
 }
 
 pub trait Parse<'source, Token>
-where Token: Logos<'source> + Clone, Self: Sized {
+where Token: Logos<'source> + Clone, Self: Sized + Debug {
     fn parse(input: &mut ParseBuffer<'source, Token>) -> Result<'source, Self, Token>;
 
     fn span(&self) -> Span;

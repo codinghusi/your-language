@@ -5,7 +5,7 @@ use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::EaterNode;
 use crate::parser::Parse;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct RegexEater {
     value: String,
     span: Span
@@ -13,7 +13,7 @@ pub struct RegexEater {
 
 impl<'source> Parse<'source, Token> for RegexEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (str,_) = token!(input, Token::Regex(str) => str)?;
+        let (str,_) = first!(token!(input, Token::Regex(str) => str))?;
 
         Ok(RegexEater {
             value: str,
