@@ -27,11 +27,12 @@ fn main() -> Result<'static, ()> {
 
     let span;
     spanned!(span, buffer, {
+        keyword!(buffer, "node");
         let (name, token) = token!(buffer, Token::Identifier(identifier) => identifier)?;
         println!("name: {}", name);
     });
 
-    // println!("span: {:?}, slice: {}", span, token.slice);
+    println!("span: {:?}, slice: {}", span, token.slice);
 
     Ok(())
 }

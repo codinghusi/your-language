@@ -69,8 +69,9 @@ macro_rules! identifier {
 
 #[macro_export]
 macro_rules! keyword {
-    ($buffer:ident, $name:ident) => {
-        token!($buffer, crate::token::Token::Identifier(stringify!($name)))
+    ($buffer:ident, $name:expr) => {
+        let name = $name.to_string();
+        token!($buffer, crate::token::Token::Identifier(name))
     };
 }
 
