@@ -6,6 +6,9 @@ use std::slice::Iter;
 use std::vec::IntoIter;
 use std::marker::PhantomData;
 
+#[macro_use]
+use crate::maybe_unwrap;
+
 #[derive(Clone)]
 pub struct ParseToken<Token>
 where Self: Sized, Token: Clone {
@@ -112,7 +115,9 @@ where Token: Logos<'source> + Clone + Debug {
     }
 
     pub fn next(&mut self) -> Option<ParseToken<Token>> {
-        self.lexer.next()
+        let item = self.lexer.next();
+        self.last_span = maybe_unwrap!(&item, Some(token) => token.span());
+        item
     }
 
     pub fn peek(&mut self) -> Option<&ParseToken<Token>> {

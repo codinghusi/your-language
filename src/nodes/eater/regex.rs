@@ -13,11 +13,11 @@ pub struct RegexEater {
 
 impl<'source> Parse<'source, Token> for RegexEater {
     fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (str,_) = first!(token!(input, Token::Regex(str) => str))?;
+        let (str, token) = first!(token!(input, Token::Regex(str) => str))?;
 
         Ok(RegexEater {
             value: str,
-            span: input.span()
+            span: token.span()
         })
     }
 

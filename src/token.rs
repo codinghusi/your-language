@@ -74,7 +74,7 @@ macro_rules! spanned {
     ($destination:ident, $buffer:expr, {$($body:tt)*}) => {
         let start = $buffer.peek_span().start.clone();
         $($body)*
-        let end = $buffer.peek_span().end.clone();
+        let end = $buffer.span().end.clone();
         $destination = start..end;
     };
 }

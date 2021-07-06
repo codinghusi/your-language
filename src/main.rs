@@ -8,6 +8,7 @@ mod token;
 mod node;
 mod nodes;
 mod parser;
+mod utils;
 
 use crate::node::{NodeType, NodeEnum};
 
