@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 
 #[macro_use]
 use crate::maybe_unwrap;
+use crate::annotated_lexer::AnnotatedLexi;
 
 #[derive(Clone)]
 pub struct ParseToken<Token>
@@ -20,12 +21,11 @@ where Self: Sized, Token: Clone {
 // TODO: implement From<T>
 impl<Token> ParseToken<Token>
 where Token: Clone {
-    fn from<'source>(item: (Token, Span), slice: String) -> Self
+    fn from<'source>(token: Token, span: Span, slice: String) -> Self
     where Token: Logos<'source> {
-        // TODO: Find a way to add slices to ParserToken
-        ParseToken {
-            token: item.0,
-            _span: item.1,
+        Self {
+            token,
+            _span: span,
             slice
         }
     }
@@ -43,7 +43,8 @@ where Token: Clone {
     },
     EOF {
         expected: Vec<String>
-    }
+    },
+
 }
 
 impl<Token: Clone> fmt::Debug for ParseError<Token> {
@@ -99,10 +100,7 @@ where Token: Logos<'source> + Clone + Debug {
     pub fn from(lexer: Lexer<'source, Token>) -> Self {
         Self {
             // FIXME: implement <not implemented>
-            lexer: lexer.spanned().map(|item| {
-                let slice = format!("{:?}", item.0);
-                ParseToken::from(item, slice)
-            }).collect::<Vec<_>>().into_iter().peekable(),
+            lexer: lexer.annotated().map(|(token, span, slice)| ParseToken::from(token, span, slice)).collect::<Vec<_>>().into_iter().peekable(),
             last_span: None,
             next_token: None,
             lifetime_stuff: PhantomData
@@ -151,5 +149,5 @@ pub trait Parse<'source, Token>
 where Token: Logos<'source> + Clone, Self: Sized + Debug {
     fn parse(input: &mut ParseBuffer<'source, Token>) -> Result<'source, Self, Token>;
 
-    fn span(&self) -> Span;
+    fn span(&self) -> &Span;
 }

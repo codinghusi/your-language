@@ -1,4 +1,7 @@
 use crate::nodes::eater::Eater;
+use crate::parser::Parse;
+use crate::token::Token;
+use logos::Span;
 
 #[derive(Clone, Debug)]
 pub enum Whitespace {
@@ -11,8 +14,23 @@ pub enum Whitespace {
 #[derive(Debug)]
 pub struct SeparatedEater {
     separator_before: SeparationEater,
-    eater: Eater
+    eater: Eater,
+    span: Span
 }
+
+impl_parse!(SeparatedEater, {
+    (input) => {
+        let (separator_before, _) = first!(token!(input, Token::Separator(separator) => separator))?;
+        let eater: Eater = input.parse()?;
+    },
+    (span) => {
+        Self {
+            separator_before,
+            eater,
+            span
+        }
+    }
+});
 
 #[derive(Clone, Debug)]
 pub struct SeparationEater {

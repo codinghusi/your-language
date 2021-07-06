@@ -17,24 +17,17 @@ pub struct NodeDefinitionNode {
     pub span: Span
 }
 
-impl<'source> Parse<'source, Token> for NodeDefinitionNode {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-
-        let span;
-        spanned!(span, input, {
-            keyword!(input, "node")?;
-            let identifier: IdentifierNode = input.parse()?;
-            let block: NodeBlockNode = input.parse()?;
-        });
-
-        Ok(Self {
-            name: identifier,
+impl_parse!(NodeDefinitionNode, {
+    (input) => {
+        first!(keyword!(input, "node"))?;
+        let name: IdentifierNode = input.parse()?;
+        let block: NodeBlockNode = input.parse()?;
+    },
+    (span) => {
+        Self {
+            name,
             block,
             span
-        })
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});

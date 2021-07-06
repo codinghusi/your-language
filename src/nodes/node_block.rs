@@ -17,22 +17,16 @@ pub struct NodeBlockNode {
     pub span: Span
 }
 
-impl<'source> Parse<'source, Token> for NodeBlockNode {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let span;
-        spanned!(span, input, {
-            braced!(input, curly {
-                let items = list!(input, BlockItem);
-            });
+impl_parse!(NodeBlockNode, {
+    (input) => {
+        braced!(input, curly {
+            let items = list!(input, BlockItem);
         });
-
-        Ok(Self {
+    },
+    (span) => {
+        Self {
             items,
             span
-        })
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});

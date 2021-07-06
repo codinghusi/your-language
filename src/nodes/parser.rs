@@ -1,23 +1,28 @@
-use crate::node::{Node, NodeEnum, NodeType};
+use crate::node::{NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::Token;
+use crate::token::{Token, ParseBuffer, Result};
 use node_derive::{NodeType, NodeEnum};
+use crate::nodes::eater::Eater;
+use crate::parser::Parse;
+use crate::nodes::eater::separator::SeparatedEater;
 
-#[derive(NodeType)]
+#[derive(NodeType, Debug)]
 pub struct ParserNode {
-    value: String,
+    first_eater: Eater,
+    other_eaters: Vec<SeparatedEater>,
     span: Span
 }
 
-impl Node for ParserNode {
-    fn parse(lexer: &mut Lexer<Token>) -> Result<Self, String> {
-        let eaters = vec![];
-        while let Some(eater) = Eater::parse_any(lexer) {
-
+impl_parse!(ParserNode, {
+    (input) => {
+        let first_eater: Eater = first!(input.parse())?;
+        let other_eaters = list!(input, SeparatedEater);
+    },
+    (span) => {
+        Self {
+            first_eater,
+            other_eaters,
+            span
         }
     }
-
-    fn span(&self) -> &Span {
-        &self.span
-    }
-}
+});

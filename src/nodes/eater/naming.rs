@@ -16,30 +16,24 @@ pub struct NamedEater {
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for NamedEater {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+impl_parse!(NamedEater, {
+    (input) => {
         let (name, name_token) = first!(token!(input, Token::EaterName(name) => name))?;
         let name_span = name_token.span();
 
         let eater: EaterItem = input.parse()?;
-        let eater_span = eater.span();
-
-        let naming_span = name_span.start..eater_span.end;
-
-        Ok(Self {
+    },
+    (span) => {
+        Self {
             name: IdentifierNode {
                 value: name.clone(),
                 span: name_token.span()
             },
-            span: naming_span,
+            span,
             eater,
-        })
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});
 
 #[derive(NodeType, Debug)]
 pub struct UnnamedEater {
@@ -47,18 +41,16 @@ pub struct UnnamedEater {
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for UnnamedEater {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let eater: EaterItem = input.parse()?;
-        Ok(Self {
-            span: eater.span(),
+impl_parse!(UnnamedEater, {
+    (input) => {
+        let eater: EaterItem = first!(input.parse())?;
+    },
+    (span) => {
+        Self {
+            span,
             eater,
-        })
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});
 
 impl<'source> EaterNode<'source, Token> for NamedEater { }

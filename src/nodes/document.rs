@@ -18,19 +18,12 @@ pub struct DocumentNode {
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for DocumentNode {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let span;
-        spanned!(span, input, {
-            let items = list!(input, DocumentItem);
-        });
-        Ok(DocumentNode {
-            items,
-            span
-        })
+impl_parse!(DocumentNode, {
+    (input) => {
+        let items = list!(input, DocumentItem);
+    },
+    (span) => Self {
+        items,
+        span
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});

@@ -6,39 +6,33 @@ use node_derive::{NodeType, NodeEnum};
 use crate::nodes::eater::string::StringEater;
 use crate::nodes::eater::Eater;
 use crate::parser::Parse;
+use crate::nodes::parser::ParserNode;
 
 #[derive(NodeType, Debug)]
 pub struct VariableDeclarationNode {
     name: IdentifierNode,
-    eater: Eater,
+    parser: ParserNode,
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for VariableDeclarationNode {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
+impl_parse!(VariableDeclarationNode, {
+    (input) => {
+        let name: IdentifierNode = first!(input.parse())?;
 
-        let span;
-        spanned!(span, input, {
-            let name: IdentifierNode = input.parse()?;
+        // parses "() => "
+        braced!(input, rounded {});
+        token!(input, Token::Assign);
 
-            // parses "() => "
-            braced!(input, rounded {});
-            token!(input, Token::Assign);
+        // parses the actual eater
+        let parser: ParserNode = input.parse()?;
 
-            // parses the actual eater
-            let eater: Eater = input.parse()?;
-
-            token!(input, Token::Semicolon)?;
-        });
-
-        Ok(Self {
+        token!(input, Token::Semicolon)?;
+    },
+    (span) => {
+        Self {
             name,
             span,
-            eater
-        })
+            parser
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});

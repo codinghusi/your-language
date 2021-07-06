@@ -30,6 +30,7 @@ pub enum Token {
     Separator(SeparationEater),
 
     #[regex(r#""([^"])+""#, |lex| lex.slice().to_string())]
+    #[regex(r#"'([^'])+'"#, |lex| lex.slice().to_string())]
     String(String),
 
     #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", |lex| lex.slice().to_string())]
@@ -51,11 +52,24 @@ pub type ParseError = parser::ParseError<Token>;
 pub type ParseFailure = parser::ParseFailure<Token>;
 
 #[macro_export]
+macro_rules! maybe_throw {
+    ($result:expr) => {
+        {
+            let result = $result;
+            match result {
+                Err(err @ crate::parser::ParseFailure::Poisoned(_)) => return Err(err),
+                _ => result
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! list {
     ($buffer:expr, $node:ty $(, $separator:pat)?) => {
         {
             let mut items = vec![];
-            while let Ok(item) = <$node>::parse($buffer) {
+            while let Ok(item) = maybe_throw!(<$node>::parse($buffer)) {
                 items.push(item);
                 $(
                     if token!($buffer, $separator).is_err() {
@@ -68,14 +82,72 @@ macro_rules! list {
     };
 }
 
+#[macro_export]
+macro_rules! parse_error {
+    ($buffer:expr, unexpected) => {
+        let token = $buffer.peek();
+        Err(
+            crate::token::ParseFailure::Poisoned(
+                crate::token::ParseError::Unexpected {
+                    expected: vec![stringify!($match).to_string()],
+                    got: (*token).clone()
+                }
+            )
+        )
+    }
+}
+
+#[macro_export]
+macro_rules! delimited {
+    ($buffer:expr, $node:ty, $separator:expr) => {
+        {
+            let mut leading = true;
+            let mut items = vec![];
+            while let Ok(item) = <$node>::parse($buffer) {
+                items.push(item);
+                if token!($buffer, $separator).is_err() {
+                    leading = false;
+                    break;
+                }
+            }
+            if leading {
+
+            }
+            items
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_parse {
+    ($node:ty, {($input:ident) => {$($implementation:tt)*}, ($span:ident) => $return:expr}) => {
+        impl<'source> Parse<'source, crate::token::Token> for $node {
+            fn parse($input: &mut crate::token::ParseBuffer) -> crate::token::Result<'source, Self> {
+                spanned!($input, {
+                    body => {
+                        $($implementation)*
+                    },
+                    ($span) => $return
+                })
+            }
+
+            fn span(&self) -> &Span {
+                &self.span
+            }
+        }
+    };
+}
 
 #[macro_export]
 macro_rules! spanned {
-    ($destination:ident, $buffer:expr, {$($body:tt)*}) => {
-        let start = $buffer.peek_span().start.clone();
-        $($body)*
-        let end = $buffer.span().end.clone();
-        $destination = start..end;
+    ($buffer:expr, {body => {$($body:tt)*}, ($span:ident) => $return:expr}) => {
+        {
+            let start = $buffer.peek_span().start.clone();
+            $($body)*
+            let end = $buffer.span().end.clone();
+            let $span = start..end;
+            Ok($return)
+        }
     };
 }
 

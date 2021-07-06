@@ -11,19 +11,16 @@ pub struct RegexEater {
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for RegexEater {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (str, token) = first!(token!(input, Token::Regex(str) => str))?;
-
-        Ok(RegexEater {
+impl_parse!(RegexEater, {
+    (input) => {
+        let (str, _) = first!(token!(input, Token::Regex(str) => str))?;
+    },
+    (span) => {
+        Self {
             value: str,
-            span: token.span()
-        })
+            span
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});
 
 impl<'source> EaterNode<'source, Token> for RegexEater { }

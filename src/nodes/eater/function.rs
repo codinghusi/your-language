@@ -1,6 +1,6 @@
 use crate::node::{NodeEnum, NodeType};
 use logos::{Lexer, Span};
-use crate::token::{Token, ParseBuffer, Result};
+use crate::token::{Token, ParseBuffer, Result, Brace};
 use node_derive::{NodeType, NodeEnum, node};
 use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::eater::EaterNode;
@@ -12,14 +12,18 @@ pub struct FunctionEater {
     span: Span
 }
 
-impl<'source> Parse<'source,  Token> for FunctionEater {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        unimplemented!()
+impl_parse!(FunctionEater, {
+    (input) => {
+        let name: IdentifierNode = first!(input.parse())?;
+        token!(input, Token::RoundedBrace(Brace::Open))?;
+        token!(input, Token::RoundedBrace(Brace::Close))?;
+    },
+    (span) => {
+        Self {
+            name,
+            span
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});
 
 impl<'source> EaterNode<'source, Token> for FunctionEater { }

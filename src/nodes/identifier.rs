@@ -10,17 +10,15 @@ pub struct IdentifierNode {
     pub span: Span
 }
 
+impl_parse!(IdentifierNode, {
+    (input) => {
+        let (name, _) = first!(token!(input, Token::Identifier(name) => name))?;
+    },
 
-impl<'source> Parse<'source, Token> for IdentifierNode {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (name, token) = token!(input, Token::Identifier(name) => name)?;
-        Ok(Self {
+    (span) => {
+        Self {
             value: name,
-            span: token.span()
-        })
+            span
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});

@@ -11,19 +11,16 @@ pub struct StringEater {
     span: Span
 }
 
-impl<'source> Parse<'source, Token> for StringEater {
-    fn parse(input: &mut ParseBuffer) -> Result<'source, Self> {
-        let (str, token) = first!(token!(input, Token::String(str) => str))?;
-
-        Ok(StringEater {
+impl_parse!(StringEater, {
+    (input) => {
+        let (str, _) = first!(token!(input, Token::String(str) => str))?;
+    },
+    (span) => {
+        Self {
             value: str.clone(),
-            span: token.span()
-        })
+            span
+        }
     }
-
-    fn span(&self) -> Span {
-        self.span.clone()
-    }
-}
+});
 
 impl<'source> EaterNode<'source, Token> for StringEater { }
