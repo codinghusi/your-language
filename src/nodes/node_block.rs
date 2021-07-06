@@ -1,10 +1,9 @@
-use logos::{Lexer, Span};
-use crate::token::{Token, Brace, ParseBuffer, Result};
+use logos::Span;
+use crate::token::{Token, ParseBuffer};
 use crate::nodes::variable_declaration::VariableDeclarationNode;
-use crate::node::{NodeEnum, NodeType};
+use crate::node::NodeType;
 use node_derive::{NodeType, NodeEnum};
 use crate::parser::{Parse};
-use crate::nodes::identifier::IdentifierNode;
 
 #[derive(NodeEnum, Debug)]
 pub enum BlockItem {

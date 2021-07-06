@@ -1,4 +1,4 @@
-use logos::{Span, Logos, Lexer, Source};
+use logos::{Span, Logos, Lexer};
 
 pub struct AnnotatedLexer<'source, Token>
 where Token: Logos<'source> {

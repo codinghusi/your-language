@@ -1,12 +1,10 @@
-use logos::{Span, SpannedIter, Lexer, Logos};
-use std::fmt::{Display, Formatter, Debug};
+use logos::{Span, Lexer, Logos};
+use std::fmt::Debug;
 use std::iter::Peekable;
 use std::fmt;
-use std::slice::Iter;
 use std::vec::IntoIter;
 use std::marker::PhantomData;
 
-#[macro_use]
 use crate::maybe_unwrap;
 use crate::annotated_lexer::AnnotatedLexi;
 
@@ -91,7 +89,6 @@ pub struct ParseBuffer<'source, Token>
 where Token: Logos<'source> + Clone {
     pub lexer: Peekable<IntoIter<ParseToken<Token>>>,
     pub last_span: Option<Span>,
-    next_token: Option<(Token, Span)>,
     lifetime_stuff: PhantomData<&'source ()>,
 }
 
@@ -102,7 +99,6 @@ where Token: Logos<'source> + Clone + Debug {
             // FIXME: implement <not implemented>
             lexer: lexer.annotated().map(|(token, span, slice)| ParseToken::from(token, span, slice)).collect::<Vec<_>>().into_iter().peekable(),
             last_span: None,
-            next_token: None,
             lifetime_stuff: PhantomData
         }
     }
@@ -120,11 +116,6 @@ where Token: Logos<'source> + Clone + Debug {
 
     pub fn peek(&mut self) -> Option<&ParseToken<Token>> {
         self.lexer.peek()
-    }
-
-    pub fn slice(&self) -> String {
-        // FIXME: Actual find a way to get a slice
-        return String::from("<not implemented>");
     }
 
     pub fn span(&mut self) -> Span {

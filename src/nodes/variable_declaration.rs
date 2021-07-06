@@ -1,10 +1,8 @@
 use crate::nodes::identifier::IdentifierNode;
-use crate::node::{NodeEnum, NodeType};
-use logos::{Lexer, Span};
-use crate::token::{Token, Brace, ParseBuffer, Result};
-use node_derive::{NodeType, NodeEnum};
-use crate::nodes::eater::string::StringEater;
-use crate::nodes::eater::Eater;
+use crate::node::NodeType;
+use logos::Span;
+use crate::token::Token;
+use node_derive::NodeType;
 use crate::parser::Parse;
 use crate::nodes::parser::ParserNode;
 

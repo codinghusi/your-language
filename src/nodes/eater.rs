@@ -1,7 +1,6 @@
-use logos::{Lexer, Span, Logos};
-use node_derive::{NodeEnum, NodeType};
+use logos::Logos;
+use node_derive::NodeEnum;
 
-use crate::node::{NodeEnum, NodeType};
 use crate::token::{Token, ParseBuffer};
 use crate::nodes::eater::naming::{NamedEater, UnnamedEater};
 use crate::nodes::eater::string::StringEater;

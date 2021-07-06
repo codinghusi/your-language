@@ -11,12 +11,9 @@ mod parser;
 mod utils;
 mod annotated_lexer;
 
-use crate::node::{NodeType, NodeEnum};
-
-use crate::token::{Token, ParseBuffer, Result};
+use crate::token::{Token, Result};
 use crate::nodes::document::{DocumentNode};
 use logos::Logos;
-use crate::nodes::node_definition::NodeDefinitionNode;
 
 fn main() -> Result<'static, ()> {
     let code = r#"
@@ -29,7 +26,7 @@ fn main() -> Result<'static, ()> {
         }
     "#;
     // get all tokens: println!("tokens: {:?}", lexer.spanned().map(|(token, span)| token).collect::<Vec<_>>());
-    let mut lexer = Token::lexer(code);
+    let lexer = Token::lexer(code);
     let mut buffer = crate::parser::ParseBuffer::from(lexer);
 
     let document: DocumentNode = buffer.parse()?;

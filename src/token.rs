@@ -1,7 +1,5 @@
-use logos::{Logos, Lexer, SpannedIter, Span};
-use crate::nodes::eater::separator::{SeparationEater, SeparatedEater};
-use std::iter::Peekable;
-use std::fmt;
+use logos::Logos;
+use crate::nodes::eater::separator::SeparationEater;
 use crate::parser;
 
 #[derive(Clone, Debug)]

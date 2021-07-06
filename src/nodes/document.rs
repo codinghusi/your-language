@@ -1,9 +1,8 @@
-use crate::node::{NodeEnum, NodeType};
-use logos::{Lexer, Span};
-use crate::token::{Token, ParseBuffer, Result};
+use crate::node::NodeType;
+use logos::Span;
+use crate::token::{Token, ParseBuffer};
 use node_derive::{NodeType, NodeEnum};
 use crate::nodes::node_definition::NodeDefinitionNode;
-use std::borrow::Borrow;
 use crate::parser::Parse;
 
 #[derive(NodeEnum, Debug)]

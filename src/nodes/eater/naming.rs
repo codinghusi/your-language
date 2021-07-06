@@ -1,12 +1,11 @@
 use crate::nodes::eater::{EaterItem, EaterNode};
 use crate::nodes::identifier::IdentifierNode;
-use crate::nodes::eater::separator::SeparationEater;
 
-use logos::{Lexer, Span};
-use node_derive::{NodeEnum, NodeType};
+use logos::Span;
+use node_derive::NodeType;
 
-use crate::node::{NodeEnum, NodeType};
-use crate::token::{Token, ParseBuffer, Result};
+use crate::node::NodeType;
+use crate::token::Token;
 use crate::parser::Parse;
 
 #[derive(NodeType, Debug)]
@@ -27,7 +26,7 @@ impl_parse!(NamedEater, {
         Self {
             name: IdentifierNode {
                 value: name.clone(),
-                span: name_token.span()
+                span: name_span
             },
             span,
             eater,
