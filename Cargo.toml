@@ -5,5 +5,4 @@ authors = ["Gerrit <gerrit.weiermann@gmx.de>"]
 edition = "2018"
 
 [dependencies]
-logos = "0.12.0"
-node-derive = { path = "./node-derive" }
+ast = { path = "./ast" }
