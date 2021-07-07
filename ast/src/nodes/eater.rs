@@ -14,14 +14,15 @@ pub mod string;
 pub mod regex;
 pub mod function;
 pub mod separator;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeEnum, Debug)]
+#[derive(NodeEnum, Debug, Serialize, Deserialize)]
 pub enum Eater {
     Named(NamedEater),
     Unnamed(UnnamedEater)
 }
 
-#[derive(NodeEnum, Debug)]
+#[derive(NodeEnum, Debug, Serialize, Deserialize)]
 pub enum EaterItem {
     String(StringEater),
     Regex(RegexEater),

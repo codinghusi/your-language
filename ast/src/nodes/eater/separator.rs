@@ -4,8 +4,10 @@ use crate::token::Token;
 use logos::Span;
 use lib::{ first, token };
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
+use node_derive::{NodeType, NodeEnum};
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Whitespace {
     Optional,
     Required,
@@ -13,7 +15,7 @@ pub enum Whitespace {
 }
 
 // FIXME: Names are to similar (SeparatedEater and SeperatorEater)
-#[derive(Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct SeparatedEater {
     separator_before: SeparationEater,
     eater: Eater,
@@ -34,7 +36,7 @@ impl_parse!(SeparatedEater, {
     }
 });
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SeparationEater {
     whitespace: Whitespace,
     require_following_eater: bool

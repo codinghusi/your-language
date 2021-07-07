@@ -1,4 +1,4 @@
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use logos::Span;
 use crate::token::{Token, Brace};
 use node_derive::{NodeType, NodeEnum, node};
@@ -7,8 +7,9 @@ use crate::nodes::eater::EaterNode;
 use lib::parser::parse::Parse;
 use lib::{ first, token };
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct FunctionEater {
     name: IdentifierNode,
     span: Span

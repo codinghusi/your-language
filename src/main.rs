@@ -19,7 +19,7 @@ fn main() {
     let mut buffer = Token::parse_buffer(code);
 
     let document: DocumentNode = buffer.parse().unwrap();
-    println!("{:#?}", document);
+    println!("{}", serde_json::to_string(&document).unwrap());
 }
 
 

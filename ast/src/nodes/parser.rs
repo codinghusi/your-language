@@ -1,4 +1,4 @@
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use logos::Span;
 use crate::token::Token;
 use node_derive::NodeType;
@@ -7,8 +7,9 @@ use lib::parser::parse::Parse;
 use crate::nodes::eater::separator::SeparatedEater;
 use lib::{ first, list };
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct ParserNode {
     first_eater: Eater,
     other_eaters: Vec<SeparatedEater>,

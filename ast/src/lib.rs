@@ -1,6 +1,6 @@
 #[macro_use]
 pub mod token;
-pub mod node;
+pub mod node_type;
 pub mod nodes;
 pub mod keyword;
 pub mod impl_parse;

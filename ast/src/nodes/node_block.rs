@@ -1,21 +1,21 @@
 use logos::Span;
 use crate::token::Token;
 use crate::nodes::variable_declaration::VariableDeclarationNode;
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use node_derive::{NodeType, NodeEnum};
 use lib::parser::{
     parse::Parse
 };
 use lib::{ braced, list };
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-
-#[derive(NodeEnum, Debug)]
+#[derive(NodeEnum, Debug, Serialize, Deserialize)]
 pub enum BlockItem {
     VariableDeclaration(VariableDeclarationNode),
 }
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct NodeBlockNode {
     pub items: Vec<BlockItem>,
     pub span: Span

@@ -28,7 +28,7 @@ pub fn node_type_macro_derive(input: TokenStream) -> TokenStream {
 
 fn impl_node_type_macro(name: &Ident) -> TokenStream {
     let gen = quote! {
-        impl NodeType for #name {
+        impl crate::node_type::NodeType for #name {
             fn get_type(&self) -> String {
                 String::from(stringify!(#name))
             }

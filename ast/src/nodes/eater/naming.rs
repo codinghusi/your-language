@@ -4,13 +4,14 @@ use crate::nodes::identifier::IdentifierNode;
 use logos::Span;
 use node_derive::NodeType;
 
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use crate::token::Token;
 use lib::parser::parse::Parse;
 use lib::{ first, token };
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct NamedEater {
     name: IdentifierNode,
     eater: EaterItem,
@@ -36,7 +37,7 @@ impl_parse!(NamedEater, {
     }
 });
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct UnnamedEater {
     eater: EaterItem,
     span: Span

@@ -1,4 +1,4 @@
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use crate::nodes::identifier::IdentifierNode;
 use crate::nodes::node_block::NodeBlockNode;
 use logos::Span;
@@ -8,8 +8,9 @@ use lib::parser::parse::Parse;
 use lib::{ first };
 use crate::keyword;
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Deserialize, Serialize)]
 pub struct NodeDefinitionNode {
     pub name: IdentifierNode,
     pub block: NodeBlockNode,

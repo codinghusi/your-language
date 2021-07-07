@@ -1,4 +1,4 @@
-use crate::node::NodeType;
+use crate::node_type::NodeType;
 use logos::Span;
 use crate::token::Token;
 use node_derive::{NodeType, NodeEnum};
@@ -8,14 +8,15 @@ use lib::parser::{
 };
 use lib::list;
 use crate::impl_parse;
+use serde::{Deserialize, Serialize};
 
-#[derive(NodeEnum, Debug)]
+#[derive(NodeEnum, Debug, Serialize, Deserialize)]
 pub enum DocumentItem {
     // Import(ImportNode),
     Definition(NodeDefinitionNode)
 }
 
-#[derive(NodeType, Debug)]
+#[derive(NodeType, Debug, Serialize, Deserialize)]
 pub struct DocumentNode {
     pub items: Vec<DocumentItem>,
     span: Span

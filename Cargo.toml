@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "./ast" }
+serde_json = "1.0"
