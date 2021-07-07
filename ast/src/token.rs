@@ -22,17 +22,17 @@ pub enum Token {
     #[token("=>")]
     Assign,
 
-    #[regex(r#"/([^/]|\\\\|\\.)+/"#,  |lex| lex.slice().to_string())]
+    #[regex(r#"/([^/]|\\\\|\\.)+/"#,  |lex| sliceit(&lex.slice().to_string(), 1, 1))]
     Regex(String),
 
     #[regex(r"[-~][!>]?>", |lex| SeparationEater::from_raw(lex.slice()))]
     Separator(SeparationEater),
 
-    #[regex(r#""([^"])+""#, |lex| lex.slice().to_string())]
-    #[regex(r#"'([^'])+'"#, |lex| lex.slice().to_string())]
+    #[regex(r#""([^"])+""#, |lex| sliceit(&lex.slice().to_string(), 1, 1))]
+    #[regex(r#"'([^'])+'"#, |lex| sliceit(&lex.slice().to_string(), 1, 1))]
     String(String),
 
-    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", |lex| lex.slice().to_string())]
+    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", |lex| sliceit(&lex.slice().to_string(), 0, 1) )]
     EaterName(String),
 
     #[token(";")]
@@ -41,6 +41,10 @@ pub enum Token {
     #[regex(r"[ \t\n]+", logos::skip)]
     #[error]
     Error,
+}
+
+fn sliceit(slice: &str, left: usize, right: usize) -> String {
+    slice[left..slice.len()-right].to_string()
 }
 
 impl<'source> IntoParseBuffer<'source, Token> for Token {
