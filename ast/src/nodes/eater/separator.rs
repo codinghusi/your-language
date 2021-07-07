@@ -14,8 +14,9 @@ pub enum Whitespace {
     NotAllowed
 }
 
-// FIXME: Names are to similar (SeparatedEater and SeperatorEater)
+// FIXME: Names are too similar (SeparatedEater and SeperatorEater)
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct SeparatedEater {
     separator_before: SeparationEater,
     eater: Eater,

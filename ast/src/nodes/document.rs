@@ -11,12 +11,14 @@ use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
 #[derive(NodeEnum, Debug, Serialize, Deserialize)]
+#[serde(tag = "_type")]
 pub enum DocumentItem {
     // Import(ImportNode),
     Definition(NodeDefinitionNode)
 }
 
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct DocumentNode {
     pub items: Vec<DocumentItem>,
     span: Span

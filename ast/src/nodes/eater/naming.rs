@@ -12,6 +12,7 @@ use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct NamedEater {
     name: IdentifierNode,
     eater: EaterItem,
@@ -38,6 +39,7 @@ impl_parse!(NamedEater, {
 });
 
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct UnnamedEater {
     eater: EaterItem,
     span: Span

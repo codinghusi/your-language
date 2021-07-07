@@ -9,6 +9,7 @@ use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct RegexEater {
     value: String,
     span: Span

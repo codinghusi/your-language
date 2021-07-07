@@ -11,6 +11,7 @@ use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
 #[derive(NodeType, Debug, Deserialize, Serialize)]
+#[serde(tag = "type")]
 pub struct NodeDefinitionNode {
     pub name: IdentifierNode,
     pub block: NodeBlockNode,

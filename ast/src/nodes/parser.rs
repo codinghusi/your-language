@@ -10,6 +10,7 @@ use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
 #[derive(NodeType, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub struct ParserNode {
     first_eater: Eater,
     other_eaters: Vec<SeparatedEater>,
