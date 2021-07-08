@@ -1,6 +1,6 @@
 pub mod buffer;
+pub mod unexpected;
 pub mod error;
-pub mod failure;
 pub mod parse;
 pub mod result;
 pub mod token;

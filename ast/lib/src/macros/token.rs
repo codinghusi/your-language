@@ -1,11 +1,9 @@
 #[macro_export]
 macro_rules! token {
     ($buffer:ident, $match:pat) => {
-        {
-            match token!($buffer, $match => ()) {
-                Ok(tuple) => Ok(tuple.1),
-                Err(err) => Err(err)
-            }
+        match token!($buffer, $match => ()) {
+            Ok(tuple) => Ok(tuple.1),
+            Err(err) => Err(err)
         }
     };
 
@@ -25,21 +23,36 @@ macro_rules! token {
                         unreachable!();
                     }
                 } else {
+                    use lib::parser::{
+                        error::ParseError,
+                        unexpected::{
+                            Unexpected,
+                            Got
+                        }
+                    };
                     let token = $buffer.peek().unwrap();
                     Err(
-                        lib::parser::failure::ParseFailure::Poisoned(
-                            lib::parser::error::ParseError::Unexpected {
+                        ParseError::Poisoned(
+                            Unexpected {
                                 expected: vec![stringify!($match).to_string()],
-                                got: (*token).clone()
+                                got: Got::Token((*token).clone())
                             }
                         )
                     )
                 }
             } else {
+                use lib::parser::{
+                    error::ParseError,
+                    unexpected::{
+                        Unexpected,
+                        Got
+                    }
+                };
                 Err(
-                    lib::parser::failure::ParseFailure::Poisoned(
-                        lib::parser::error::ParseError::EOF {
-                            expected: vec![stringify!($variant).to_string()]
+                    lib::parser::error::ParseError::Poisoned(
+                        Unexpected {
+                            expected: vec![stringify!($variant).to_string()],
+                            got: Got::EOF
                         }
                     )
                 )

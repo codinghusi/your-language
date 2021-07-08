@@ -4,15 +4,25 @@ macro_rules! list {
     ($buffer:expr, $node:ty $(, $separator:pat)?) => {
         {
             let mut items = vec![];
-            while let Ok(item) = lib::maybe_throw!(<$node>::parse($buffer)) {
-                items.push(item);
-                $(
-                    if token!($buffer, $separator).is_err() {
-                        break;
+            loop {
+                match <$node>::parse($buffer) {
+                    Ok(item) => {
+                        items.push(item);
+                        $(
+                            if token!($buffer, $separator).is_err() {
+                                break Ok(items);
+                            }
+                        )?
+                    },
+                    Err(err) => {
+                        if items.len() == 0 {
+                            break Err(err);
+                        } else {
+                            break Ok(items);
+                        }
                     }
-                )?
+                }
             }
-            items
         }
     };
 }

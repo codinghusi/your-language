@@ -1,5 +1,5 @@
 use crate::parser::{
-    failure::ParseFailure
+    error::ParseError
 };
 
-pub type Result<'source, Result, Token> = std::result::Result<Result, ParseFailure<Token>>;
+pub type Result<'source, Result, Token> = std::result::Result<Result, ParseError<Token>>;

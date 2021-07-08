@@ -6,7 +6,7 @@ use logos::Logos;
 
 #[derive(Clone)]
 pub struct ParseToken<Token>
-    where Self: Sized, Token: Clone {
+where Self: Sized, Token: Clone {
     pub token: Token,
     pub _span: Span,
     pub slice: String

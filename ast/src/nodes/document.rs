@@ -6,7 +6,7 @@ use crate::nodes::node_definition::NodeDefinitionNode;
 use lib::parser::{
     parse::Parse
 };
-use lib::list;
+use lib::{ list, first };
 use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +26,7 @@ pub struct DocumentNode {
 
 impl_parse!(DocumentNode, {
     (input) => {
-        let items = list!(input, DocumentItem);
+        let items = first!(list!(input, DocumentItem))?;
     },
     (span) => Self {
         items,

@@ -6,7 +6,7 @@ use node_derive::{NodeType, NodeEnum};
 use lib::parser::{
     parse::Parse
 };
-use lib::{ braced, list };
+use lib::{ braced, list, first };
 use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +26,7 @@ pub struct NodeBlockNode {
 impl_parse!(NodeBlockNode, {
     (input) => {
         braced!(input, curly {
-            let items = list!(input, BlockItem);
+            let items = first!(list!(input, BlockItem))?;
         });
     },
     (span) => {

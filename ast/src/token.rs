@@ -38,9 +38,13 @@ pub enum Token {
     #[token(";")]
     Semicolon,
 
+    #[regex(r"//[^\n]*\n", logos::skip)]
+    #[regex(r"/\*([^*]|\*[^/])*\*/", logos::skip)]
     #[regex(r"[ \t\n]+", logos::skip)]
     #[error]
     Error,
+
+    EOF
 }
 
 fn sliceit(slice: &str, left: usize, right: usize) -> String {

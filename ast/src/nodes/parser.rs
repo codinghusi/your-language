@@ -20,7 +20,7 @@ pub struct ParserNode {
 impl_parse!(ParserNode, {
     (input) => {
         let first_eater: Eater = first!(input.parse())?;
-        let other_eaters = list!(input, SeparatedEater);
+        let other_eaters = list!(input, SeparatedEater)?;
     },
     (span) => {
         Self {
