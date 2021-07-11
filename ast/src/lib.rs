@@ -1,3 +1,5 @@
+#![allow(unused, dead_code)]
+
 #[macro_use]
 pub mod token;
 pub mod node_type;
