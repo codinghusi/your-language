@@ -1,15 +1,13 @@
 use crate::nodes::identifier::IdentifierNode;
-use crate::node_type::NodeType;
 use logos::Span;
 use crate::token::Token;
-use node_derive::NodeType;
 use lib::parser::parse::Parse;
 use crate::nodes::parser::ParserNode;
 use lib::{ first, braced, token };
 use crate::impl_parse;
 use serde::{Deserialize, Serialize};
 
-#[derive(NodeType, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct VariableDeclarationNode {
     name: IdentifierNode,

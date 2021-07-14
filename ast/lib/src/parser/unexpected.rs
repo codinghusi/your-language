@@ -1,6 +1,7 @@
 use std::fmt;
 use crate::parser::{
-    token::ParseToken
+    token::ParseToken,
+    err_values::ErrValues
 };
 
 pub enum Got<Token>

@@ -5,7 +5,7 @@ use logos::Span;
 use lib::{ first, token };
 use crate::impl_parse;
 use serde::{Deserialize, Serialize};
-use node_derive::{NodeType, NodeEnum};
+use node_derive::NodeEnum;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Whitespace {
@@ -15,7 +15,7 @@ pub enum Whitespace {
 }
 
 // FIXME: Names are too similar (SeparatedEater and SeperatorEater)
-#[derive(NodeType, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct SeparatedEater {
     separator_before: SeparationEater,

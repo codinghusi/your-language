@@ -10,24 +10,25 @@ use logos::Logos;
 fn main() {
 
     let code = r#"
-        // Comment
-        comments {
-            comment => "//" -!> until() -> newline();
-            comment => "/*" -> until() -> "*/";
-        }
+        // // Comment
+        // comments {
+        //     comment => "//" -!> until() -> newline();
+        //     comment => "/*" -> until() -> "*/";
+        // }
 
-        // Whitespace
-        whitespace {
-            describe() => /\s/s;
-        }
+        // // Whitespace
+        // whitespace {
+        //     describe() => /\s/s;
+        // }
 
 
-        entrypoint {
+        // entrypoint {
 
-        }
+        // }
+
 
         node Identifier {
-            describe() => value: /[_a-zA-Z]\w*/;
+            describe() => -> value: /[_a-zA-Z]\w*/;
         }
 
         node String {

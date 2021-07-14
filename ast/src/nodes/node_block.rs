@@ -1,8 +1,7 @@
 use logos::Span;
 use crate::token::Token;
 use crate::nodes::variable_declaration::VariableDeclarationNode;
-use crate::node_type::NodeType;
-use node_derive::{NodeType, NodeEnum};
+use node_derive::NodeEnum;
 use lib::parser::{
     parse::Parse
 };
@@ -16,7 +15,7 @@ pub enum BlockItem {
     VariableDeclaration(VariableDeclarationNode),
 }
 
-#[derive(NodeType, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct NodeBlockNode {
     pub items: Vec<BlockItem>,
