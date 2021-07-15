@@ -21,11 +21,6 @@ macro_rules! token {
         }
     };
 
-    // TODO: Maybe improve it that you can use a path like crate::token::Token::Identifier(ident) and not only Token::Identifier(ident)
-    (err_values: $enum:ident :: $variant:pat) => {
-        $enum::err_values()
-    };
-
     ($buffer:ident, $match:pat $(, $expected:expr)?) => {
         match token!($buffer, $match => () $(, $expected)?) {
             Ok(tuple) => Ok(tuple.1),
@@ -38,7 +33,9 @@ macro_rules! token {
     };
 
     ($buffer:ident, $match:pat $( if $condition:expr )? => $ret:expr) => {
-        token!($buffer, $match $( if $condition )? => $ret, { token!(err_values: $match) })
+        {
+            token!($buffer, $match $( if $condition )? => $ret, { node_derive::err_values!($match) })
+        }
     };
 
     ($buffer:ident, $match:pat $( if $condition:expr )? => $ret:expr, $expected:expr) => {

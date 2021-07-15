@@ -7,6 +7,7 @@ pub mod nodes;
 pub mod keyword;
 pub mod impl_parse;
 pub extern crate lib;
+pub extern crate node_derive;
 
 #[cfg(test)]
 mod tests {

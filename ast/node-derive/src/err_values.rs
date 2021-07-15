@@ -12,7 +12,16 @@ use std::iter::once;
 use syn::parse::ParseBuffer;
 
 #[proc_macro]
-pub fn err_values(input: TokenStream) -> TokenStream {
-    let pat = parse_macro_input!(input as Pat);
-    // TODO: continue
+pub fn impl_err_values(pat: &Pat) -> TokenStream {
+    let path = match pat {
+        Pat::Struct(val) => val.path,
+        Pat::TupleStruct(val) => val.path,
+        Pat::Path(val) => val.path,
+        _ => panic!("given pattern variant couldn't be handled")
+    };
+    let the_enum: Vec<Ident> = path.segments.iter().rev().skip(1).rev().collect();
+    let gen = quote! {
+        #the_enum.err_values()
+    };
+    gen.into()
 }

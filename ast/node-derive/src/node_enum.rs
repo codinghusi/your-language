@@ -12,26 +12,14 @@ use std::iter::once;
 use syn::parse::ParseBuffer;
 
 
-#[proc_macro_derive(NodeEnum)]
-pub fn node_enum_derive(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as ItemEnum);
-    let name = &ast.ident;
-    impl_node_enum_macro(&name, &ast)
-
-    // match ast.data {
-    //     Data::Enum(data) => impl_node_enum_macro(&name, &data),
-    //     _ => panic!("NodeEnum can only be dervied on enums.")
-    // }
-}
-
 #[derive(Clone)]
-struct EnumVariant
+pub struct EnumVariant
 where Self: Sized {
     name: Ident,
     node: Type,
 }
 
-fn impl_node_enum_macro(name: &Ident, data: &ItemEnum) -> TokenStream {
+pub fn impl_node_enum_macro(name: &Ident, data: &ItemEnum) -> TokenStream {
     let enum_variants = data.variants.iter().map(|variant| {
         let variant_id = variant.ident.clone();
         match variant.fields {

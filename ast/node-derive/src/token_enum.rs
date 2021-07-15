@@ -4,19 +4,16 @@ extern crate syn;
 use proc_macro2::{TokenStream as TokenStream2, Span};
 use proc_macro::TokenStream as TokenStream;
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{Ident, DeriveInput, parse_macro_input, Data, DataEnum, Type, Attribute, AttributeArgs, NestedMeta, Meta, Lit, LitStr, MetaNameValue, PatTupleStruct, Expr, punctuated::Punctuated, Token, ItemEnum, Fields};
+use syn::{Variant, Ident, DeriveInput, parse_macro_input, Data, DataEnum, Type, Attribute, AttributeArgs, NestedMeta, Meta, Lit, LitStr, MetaNameValue, PatTupleStruct, Expr, punctuated::Punctuated, Token, ItemEnum, Fields};
 use syn::parse::{Parse, ParseStream};
 use std::iter::Peekable;
 use syn::token::Paren;
 use std::iter::once;
 use syn::parse::ParseBuffer;
 
-
-#[proc_macro_derive(TokenEnum, attributes(values, name))]
-pub fn token_enum_macro_derive(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as ItemEnum);
-    let name = ast.ident;
-    let variant_values = ast.variants.iter().map(|variant| {
+pub fn impl_token_enum(name: &Ident, data: &ItemEnum) -> TokenStream {
+    let variants = &data.variants;
+    let variant_values = variants.iter().map(|variant| {
         let mut values = vec![];
         let ident = &variant.ident;
         for attribute in &variant.attrs {
