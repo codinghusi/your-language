@@ -25,7 +25,7 @@ pub struct SeparatedEater {
 
 impl_parse!(SeparatedEater, {
     (input) => {
-        let (separator_before, _) = first!(token!(input, Token::Separator(separator) => separator))?;
+        let (separator_before, _) = first!(token!(input, Token::Separator(separator) => separator, ["separator"]))?;
         let eater: Eater = input.parse()?;
     },
     (span) => {

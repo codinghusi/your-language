@@ -21,27 +21,29 @@ macro_rules! token {
         }
     };
 
-    ($buffer:ident, $match:pat $(, $expected:expr)?) => {
-        match token!($buffer, $match => () $(, $expected)?) {
+    ($buffer:ident, $match:pat $(, [$($expected:expr),*])?) => {
+        match token!($buffer, $match => () $(, [$($expected),*])?) {
             Ok(tuple) => Ok(tuple.1),
             Err(err) => Err(err)
         }
     };
     
-    ($buffer:ident, $match:pat => $ret:expr $(, $expected:expr)?) => {
-        token!($buffer, $match if true => $ret $(, $expected)?)
+    ($buffer:ident, $match:pat => $ret:expr $(, [$($expected:expr),*])?) => {
+        token!($buffer, $match if true => $ret $(, [$($expected),*])?)
     };
 
     ($buffer:ident, $match:pat $( if $condition:expr )? => $ret:expr) => {
         {
-            token!($buffer, $match $( if $condition )? => $ret, { node_derive::err_values!($match) })
+            // token!($buffer, $match $( if $condition )? => $ret, { node_derive::err_values!($match) })
+            token!($buffer, $match $( if $condition )? => $ret, [stringify!($match)])
         }
     };
 
-    ($buffer:ident, $match:pat $( if $condition:expr )? => $ret:expr, $expected:expr) => {
+    ($buffer:ident, $match:pat $( if $condition:expr )? => $ret:expr, [$($expected:expr),*]) => {
         {
             use lib::parser::token::ParseToken;
             let peek = $buffer.peek();
+            let expected: Vec<_> = vec![$($expected),*].iter().map(|item| item.to_string()).collect();
             if let Some(_) = peek {
                 match peek {
                     Some(ParseToken { token: $match, .. }) $( if $condition )? => {
@@ -55,10 +57,10 @@ macro_rules! token {
                             unreachable!();
                         }
                     },
-                    _ => token!(util_poison: $buffer, $expected, (token) => Got::Token((*token).clone()))
+                    _ => token!(util_poison: $buffer, expected, (token) => Got::Token((*token).clone()))
                 }
             } else {
-                token!(util_poison: $buffer, $expected, (token) => Got::EOF)
+                token!(util_poison: $buffer, expected, (token) => Got::EOF)
             }
         }
     };

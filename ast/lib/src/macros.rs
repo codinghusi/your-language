@@ -1,5 +1,4 @@
 
-pub mod braced;
 pub mod first;
 pub mod list;
 pub mod maybe_throw;

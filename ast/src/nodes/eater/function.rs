@@ -17,8 +17,8 @@ pub struct FunctionEater {
 impl_parse!(FunctionEater, {
     (input) => {
         let name: IdentifierNode = first!(input.parse())?;
-        token!(input, Token::RoundedBrace(Brace::Open))?;
-        token!(input, Token::RoundedBrace(Brace::Close))?;
+        token!(input, Token::RoundedBrace(Brace::Open), ["'('"])?;
+        token!(input, Token::RoundedBrace(Brace::Close), ["')'"])?;
     },
     (span) => {
         Self {

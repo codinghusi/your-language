@@ -3,8 +3,8 @@ use logos::Span;
 use crate::token::Token;
 use lib::parser::parse::Parse;
 use crate::nodes::parser::ParserNode;
-use lib::{ first, braced, token };
-use crate::impl_parse;
+use lib::{ first, token };
+use crate::{impl_parse, braced};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
