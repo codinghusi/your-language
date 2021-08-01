@@ -2,6 +2,7 @@
 
 pub mod parser;
 pub mod macros;
+pub mod symbol_table;
 
 #[cfg(test)]
 mod tests {

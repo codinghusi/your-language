@@ -12,8 +12,8 @@ fn main() {
     let code = r#"
         // Comment
         comments {
-            comment => "//" -!> until() -> newline();
-            comment => "/*" -> until() -> "*/";
+            describe() => "//" -!> until() -> newline();
+            describe() => "/*" -> until() -> "*/";
         }
 
         // Whitespace

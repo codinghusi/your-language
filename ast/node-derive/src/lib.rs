@@ -20,7 +20,6 @@ mod token_enum;
 
 use crate::node_enum::impl_node_enum_macro;
 use crate::token_enum::impl_token_enum;
-use crate::err_values::impl_err_values;
 
 #[proc_macro_derive(NodeEnum)]
 pub fn node_enum_derive(input: TokenStream) -> TokenStream {

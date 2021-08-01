@@ -1,7 +1,13 @@
 use logos::Span;
 use crate::token::Token;
 use node_derive::NodeEnum;
-use crate::nodes::node_definition::NodeDefinitionNode;
+use super::definition::{
+    CommentDefinitionNode,
+    EntrypointDefinitionNode,
+    NodeDefinitionNode,
+    NodelessDefinitionNode,
+    WhitespaceDefinitionNode
+};
 use lib::parser::{
     parse::Parse
 };
@@ -13,7 +19,11 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "_type")]
 pub enum DocumentItem {
     // Import(ImportNode),
-    Definition(NodeDefinitionNode)
+    Node(NodeDefinitionNode),
+    Nodeless(NodelessDefinitionNode),
+    Comment(CommentDefinitionNode),
+    Entrypoint(EntrypointDefinitionNode),
+    Whitespace(WhitespaceDefinitionNode),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
