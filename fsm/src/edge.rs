@@ -9,6 +9,7 @@ pub struct Edge<'a> {
 
 #[derive(Clone)]
 pub enum EdgeType<'a> {
+    Start,
     Capture {
 
     },

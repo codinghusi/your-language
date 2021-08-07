@@ -1,4 +1,11 @@
 use crate::edge::{Edge, EdgeType};
+use std::vec::IntoIter;
+
+pub enum InsertStatus {
+    DidAlreadyExist,
+    EOF,
+    Added
+}
 
 #[derive(PartialEq)]
 pub struct State<'a> {
@@ -11,21 +18,32 @@ impl<'a> State<'a> {
         Self { children: vec![], edge_index: 0 }
     }
 
-    pub fn add_edge(&mut self, edge: EdgeType<'a>, do_merge: bool) -> (bool, &mut State<'a>) {
-        match (do_merge, self.children.iter_mut().find(|child| child.data.eq(&edge))) {
-            (true, Some(ref mut edge)) => {
-                (true, &mut edge.to_state)
+    pub fn add_path(&mut self, edges: &mut IntoIter<EdgeType<'a>>, mergeable: bool) -> InsertStatus {
+        match edges.next() {
+            Some(next) => {
+                match (mergeable, self.children.iter_mut().find(|child| child.data.eq(&next))) {
+                    (true, Some(ref mut existing_edge)) => match existing_edge.to_state.add_path(edges, true) {
+                        InsertStatus::Added => {
+                            self.edge_index += 1;
+                            InsertStatus::Added
+                        },
+                        _ => InsertStatus::DidAlreadyExist
+                    },
+                    _ => {
+                        let mut state = State::new();
+                        state.add_path(edges, false);
+                        let edge = Edge {
+                            incr_value: self.edge_index,
+                            data: next,
+                            to_state: state
+                        };
+                        self.children.push(edge);
+                        self.edge_index += 1;
+                        InsertStatus::Added
+                    }
+                }
             },
-            _ => {
-                let edge_index = self.edge_index;
-
-                self.edge_index += 1;
-
-                let mut state = State::<'a>::new();
-                let edge = Edge { incr_value: edge_index, to_state: state, data: edge };
-                self.children.push(edge);
-                (false, &mut state)
-            }
+            None => InsertStatus::EOF
         }
     }
 }

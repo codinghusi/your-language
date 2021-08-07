@@ -12,9 +12,9 @@ use fsm::EdgeType;
 
 fn main() {
 
-    let fsm = FSM::build(&[
-        [ EdgeType::Char('a'), EdgeType::Char('b'), EdgeType::Char('c') ],
-        [ EdgeType::Char('c'), EdgeType::Char('b'), EdgeType::Char('a') ],
+    let fsm = FSM::build(vec![
+        vec![ EdgeType::Char('a'), EdgeType::Char('b'), EdgeType::Char('c') ],
+        vec![ EdgeType::Char('c'), EdgeType::Char('b'), EdgeType::Char('a') ],
     ]);
 
     // return;
