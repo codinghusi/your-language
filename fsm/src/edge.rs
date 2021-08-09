@@ -1,28 +1,36 @@
 use crate::state::State;
 
-#[derive(PartialEq)]
-pub struct Edge<'a> {
+#[derive(PartialEq, Debug)]
+pub struct Edge {
     pub incr_value: u16,
-    pub data: EdgeType<'a>,
-    pub to_state: State<'a>
+    pub data: EdgeType,
+    pub to_state: Box<State>,
+    pub capture: Capture,
 }
 
-#[derive(Clone)]
-pub enum EdgeType<'a> {
+#[derive(PartialEq, Debug)]
+pub enum Capture {
+    None,
     Start,
-    Capture {
-
-    },
-    Char(char),
-    Loop(&'a State<'a>)
+    Stop
 }
 
-impl PartialEq for EdgeType<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Char(c1), Self::Char(c2)) if c1.eq(c2) => true,
-            (Self::Capture {..}, Self::Capture {..}) => false,
-            _ => false
-        }
+#[derive(PartialEq, Clone, Debug)]
+pub enum EdgeType {
+    Start,
+    Jump,
+    Char(char),
+}
+
+#[derive(Debug)]
+pub enum ParseStatus {
+    Success,
+    Again, // for Start and Capture that don't eat
+    Failed
+}
+
+impl From<EdgeType> for Vec<EdgeType> {
+    fn from(edge_type: EdgeType) -> Self {
+        vec![edge_type]
     }
 }
