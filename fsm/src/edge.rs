@@ -1,10 +1,11 @@
 use crate::state::State;
+use std::cell::RefCell;
 
 #[derive(PartialEq, Debug)]
 pub struct Edge {
-    pub incr_value: u16,
+    pub value: i16,
     pub data: EdgeType,
-    pub to_state: Box<State>,
+    pub to_state: RefCell<State>,
     pub capture: Capture,
 }
 
@@ -17,7 +18,7 @@ pub enum Capture {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum EdgeType {
-    Start,
+    // Start,
     Jump,
     Char(char),
 }

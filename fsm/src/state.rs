@@ -1,65 +1,86 @@
 use crate::edge::{Edge, EdgeType, Capture};
 use std::vec::IntoIter;
 use std::iter;
+use crate::{Path, PathItem};
+use std::cell::{Ref, RefCell};
+use std::borrow::BorrowMut;
 
 #[derive(Debug)]
-pub enum InsertStatus {
+pub enum InsertStatus<'a> {
     DidAlreadyExist,
+    Added(&'a mut Edge),
     EOF,
-    Added
 }
 
 #[derive(PartialEq, Debug)]
 pub struct State {
-    pub edge_index: u16,
-    pub children: Vec<Edge>
+    pub edge_index: i16,
+    pub edges: Vec<Edge>
 }
 
 impl State {
     pub fn new() -> Self {
-        Self { children: vec![], edge_index: 0 }
+        Self { edges: vec![], edge_index: 0 }
     }
 
-    fn add<T>(&mut self, path: T) -> InsertStatus
-    where T: Into<Vec<EdgeType>> {
-        let vec: Vec<EdgeType> = path.into();
-        self.add_path(&mut vec.into_iter(), true)
-    }
-
-    pub fn add_path(&mut self, edges: &mut IntoIter<EdgeType>, mergeable: bool) -> InsertStatus {
-        match edges.next() {
-            Some(next) => {
-                match (mergeable, self.children.iter_mut().find(|child| child.data.eq(&next))) {
-                    (true, Some(ref mut existing_edge)) => match existing_edge.to_state.add_path(edges, true) {
-                        InsertStatus::Added => {
-                            self.edge_index += 1;
-                            InsertStatus::Added
-                        },
-                        _ => InsertStatus::DidAlreadyExist
-                    },
-                    _ => {
-                        let foo = if let EdgeType::Char(c) = &next { c.to_string() } else { "".to_string() };
-                        let mut state = State::new();
-                        state.add_path(edges, false);
-                        let edge = Edge {
-                            incr_value: self.edge_index,
-                            data: next,
-                            to_state: Box::new(state),
-                            capture: Capture::None
-                        };
-                        self.children.push(edge);
-                        self.edge_index += 1;
-
-                        InsertStatus::Added
+    pub fn add_path(&mut self, items: IntoIter<PathItem>, mergeable: bool, target_value: i16) -> InsertStatus {
+        match items.next() {
+            Some(PathItem::Item(item)) => {
+                // TODO: start here. Do refactor the following code!
+                if let (true, Some(ref mut edge)) = (mergeable, self.edges.iter_mut().find(|child| child.data.eq(&item.to_edge_type()))) {
+                    let diff = target_value - edge.value;
+                    match edge.to_state.borrow_mut().add_path(items, true, diff) {
+                        InsertStatus::EOF => InsertStatus::DidAlreadyExist,
+                        status => status
                     }
+                } else {
+                    let mut state = State::new();
+                    state.add_path(items, false, 0);
+                    let edge = Edge {
+                        value: target_value,
+                        data: item.to_edge_type(),
+                        to_state: RefCell::new(state),
+                        capture: Capture::None
+                    };
+                    let borrow = &mut edge;
+                    self.add_edge(edge);
+                    InsertStatus::Added(borrow)
                 }
             },
+            Some(PathItem::SubItems(subitems)) => {
+                if subitems.len() == 0 {
+                    return self.add_path(items, mergeable, target_value)
+                }
+                let results: Vec<InsertStatus> = subitems.iter()
+                    .map(|item| {
+                        item.items.clone().into_iter().chain(item.items.clone().into_iter()).into_iter()
+                    }) // FIXME: So bad cloning everything so often..
+                    .map(|items| self.add_path(items, mergeable, target_value))
+                    .collect();
+                let failed = results.find(|status| match status {
+                    InsertStatus::Added(_) => false,
+                    _ => true
+                });
+                match failed {
+                    Some(status) => status,
+                    None => match results.into_iter().last() {
+                        Some(last) => last,
+                        None => unreachable!()
+                    }
+                }
+            }
             None => InsertStatus::EOF
         }
     }
+
+    pub fn add_edge(&self, edge: Edge) -> &Self {
+        self.edges.push(edge);
+        self
+    }
+
     pub fn get_possible_states(&self) -> Vec<(char, &Box<State>)> {
         let mut result = vec![];
-        for edge in self.children.iter() {
+        for edge in self.edges.iter() {
             match edge.data {
                 EdgeType::Char(c) => result.extend([(c, &edge.to_state)].iter()),
                 EdgeType::Jump => result.append(&mut edge.to_state.get_possible_states()),
