@@ -7,15 +7,45 @@
 // use ast::nodes::document::DocumentNode;
 // use logos::Logos;
 
-use fsm::FSM;
+use fsm::{FSM, FSM_Builder};
 use fsm::EdgeType;
+use fsm::{Path, PathItem, Item};
+
+fn foo(str: &str) -> Vec<EdgeType> {
+    str.chars().map(|c| EdgeType::Char(c)).collect::<Vec<_>>()
+}
 
 fn main() {
 
-    let fsm = FSM::build(vec![
-        vec![ EdgeType::Char('a'), EdgeType::Char('b'), EdgeType::Char('c') ],
-        vec![ EdgeType::Char('c'), EdgeType::Char('b'), EdgeType::Char('a') ],
-    ]);
+    let builder = FSM_Builder::from(
+        vec![
+            Path::new()
+                .oneOf("abc")
+                .string("123"),
+            Path::new()
+                .oneOf("123")
+                .string("abc"),
+            Path::new()
+                .oneOf("123")
+                .string("123"),
+        ]
+    );
+
+    let fsm = builder.build();
+
+
+
+
+
+    // let fsm = FSM::build(vec![
+    //     foo("123"),
+    //     foo("abc"),
+    //     foo("ab5"),
+    // ]);
+    //
+    // fsm.parse("abc");
+    // println!("{:?}", fsm.root.combinations())
+    // println!("{:?}", fsm.root.combinations());
 
     // return;
     // let code = r#"

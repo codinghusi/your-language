@@ -47,7 +47,7 @@ impl State {
                     InsertStatus::Added(borrow)
                 }
             },
-            Some(PathItem::SubItems(subitems)) => {
+            Some(PathItem::Subpaths(subitems)) => {
                 if subitems.len() == 0 {
                     return self.add_path(items, mergeable, target_value)
                 }
