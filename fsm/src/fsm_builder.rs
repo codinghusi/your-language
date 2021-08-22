@@ -1,6 +1,8 @@
 use crate::FSM;
-use crate::State;
-use crate::Path;
+use crate::path::Path;
+use crate::state_edge::{StateEdge, MergeStatus};
+use std::rc::Rc;
+use std::convert::TryInto;
 
 pub struct FSM_Builder {
     paths: Vec<Path>
@@ -11,21 +13,27 @@ impl FSM_Builder {
         Self { paths: vec![] }
     }
 
-    pub fn from(&self, paths: Vec<Path>) -> Self {
+    pub fn from(paths: Vec<Path>) -> Self {
         Self { paths }
     }
 
-    pub fn add(&self, path: Path) -> u16 {
-        let index = self.paths.len();
+    pub fn add(&mut self, path: Path) -> &mut Self {
         self.paths.push(path);
-        index
+        self
     }
 
-    pub fn build(self) -> FSM {
-        let mut root = State::new();
-        for path in self.paths {
-            root.add_path(&mut path.into_iter(), true);
-        }
+    pub fn build(&self) -> FSM {
+        let mut root = StateEdge::new_root();
+        let mut ids = StateEdge::id_gen();
+        self.paths
+            .iter()
+            .map(|path| StateEdge::merge_path(Rc::clone(&root), path, &mut ids))
+            .for_each(|status| {
+                match status {
+                    MergeStatus::Failed => panic!("building failed..."), // TODO: make this more proper into a Result<>
+                    _ => ()
+                }
+            });
         FSM { root }
     }
 }
