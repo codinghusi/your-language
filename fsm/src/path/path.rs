@@ -1,4 +1,5 @@
 use super::{Edge, Capture};
+use crate::path::capture::{CaptureItem, CaptureType};
 
 
 pub struct Path {
@@ -46,11 +47,19 @@ impl Path {
     }
 
     pub fn capture(mut self, key: String, path: Path) -> Self {
-        self.add(Edge::Capture(Capture::Struct { key, path }))
+        self.add(Edge::Capture(CaptureItem {
+            ty: CaptureType::Struct,
+            key,
+            path
+        }))
     }
 
     pub fn capture_text(mut self, key: String, path: Path) -> Self {
-        self.add(Edge::Capture(Capture::Text { key, path }))
+        self.add(Edge::Capture(CaptureItem {
+            ty: CaptureType::Text,
+            key,
+            path
+        }))
     }
 
     pub fn optional(mut self, path: Path) -> Self {

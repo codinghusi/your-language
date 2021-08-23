@@ -1,10 +1,11 @@
 
-use super::{Capture, Path};
+use super::{Path};
+use crate::path::capture::CaptureItem;
 
 pub enum Edge {
     Char(char),
     OneOf(Vec<Path>),
     Optional(Path),
-    Capture(Capture),
+    Capture(CaptureItem),
     Cycle(Path)
 }
