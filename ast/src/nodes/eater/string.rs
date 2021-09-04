@@ -15,7 +15,7 @@ pub struct StringEater {
 
 impl_parse!(StringEater, {
     (input) => {
-        let (str, _) = first!(token!(input, Token::String(str) => str))?;
+        let (str, _) = first!(token!(input, Token::String(str) => str, ["string"]))?;
     },
     (span) => {
         Self {

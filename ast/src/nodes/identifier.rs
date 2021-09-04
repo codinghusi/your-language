@@ -14,7 +14,7 @@ pub struct IdentifierNode {
 
 impl_parse!(IdentifierNode, {
     (input) => {
-        let (name, _) = first!(token!(input, Token::Identifier(name) => name))?;
+        let (name, _) = first!(token!(input, Token::Identifier(name) => name, ["identifier"]))?;
     },
 
     (span) => {

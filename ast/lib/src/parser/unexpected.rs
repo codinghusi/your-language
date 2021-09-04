@@ -24,8 +24,8 @@ impl<Token: Clone> fmt::Debug for Unexpected<Token> {
         };
         match self.expected.len() {
             0 => write!(f, "unexpected {}", got_str),
-            1 => write!(f, "unexpected {}, expected {}", got_str, self.expected[0]),
-            _ => write!(f, "unexpected {}, expected one of {}", got_str, self.expected.join(", ")),
+            1 => write!(f, "unexpected {}, expected: {}", got_str, self.expected[0]),
+            _ => write!(f, "unexpected {}, expected one of: {}", got_str, self.expected.join(", ")),
         }
     }
 }

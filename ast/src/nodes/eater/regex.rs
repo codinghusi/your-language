@@ -15,7 +15,7 @@ pub struct RegexEater {
 
 impl_parse!(RegexEater, {
     (input) => {
-        let (str, _) = first!(token!(input, Token::Regex(str) => str))?;
+        let (str, _) = first!(token!(input, Token::Regex(str) => str, ["regex"]))?;
     },
     (span) => {
         Self {

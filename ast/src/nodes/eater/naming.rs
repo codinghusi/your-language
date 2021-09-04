@@ -19,7 +19,7 @@ pub struct NamedEater {
 
 impl_parse!(NamedEater, {
     (input) => {
-        let (name, name_token) = first!(token!(input, Token::EaterName(name) => name))?;
+        let (name, name_token) = first!(token!(input, Token::EaterName(name) => name, ["eater-name"]))?;
         let name_span = name_token.span().clone();
 
         let eater: EaterItem = input.parse()?;

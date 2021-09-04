@@ -1,16 +1,15 @@
 
-// FIXME: move into crate "ast"
 #[macro_export]
 macro_rules! braced {
-    ($buffer:ident, ty $type:ident, {$($body:tt)*}) => {
+    ($buffer:ident, ty $variant:ident, {$($body:tt)*}) => {
         use lib::token;
         use crate::token::{
             Token,
             Brace
         };
-        token!($buffer, Token::$type(Brace::Open))?;
+        token!($buffer, Token::$variant(Brace::Open), ["'{'"])?;
         $($body)*
-        token!($buffer, Token::$type(Brace::Close))?;
+        token!($buffer, Token::$variant(Brace::Close), ["'}'"])?;
     };
 
     ($buffer:ident, curly {$($body:tt)*}) => {
