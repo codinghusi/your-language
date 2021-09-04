@@ -6,14 +6,14 @@ use std::slice::Iter;
 use std::collections::HashSet;
 use std::hash::Hasher;
 use std::hash::Hash;
-use std::borrow::{Borrow, BorrowMut};
+use crate::builder::id_gen::IdGen;
 
 pub enum MergeStatus {
-    Added(Vec<StateRef>),
+    Added(HashSet<StateRef>),
     Failed
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StateRef(Rc<RefCell<State>>);
 
 impl StateRef {
@@ -22,32 +22,34 @@ impl StateRef {
     }
 }
 
-impl Borrow<State> for StateRef {
-    fn borrow(&self) -> &State {
-        self.0.as_ref().borrow().deref()
-    }
-}
+impl Deref for StateRef {
+    type Target = RefCell<State>;
 
-impl BorrowMut<State> for StateRef {
-    fn borrow_mut(&mut self) -> &mut State {
-        self.0.as_ref().borrow_mut().deref_mut()
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
     }
 }
 
 impl Hash for StateRef {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (self.borrow() as &State).hash(state);
+    fn hash<H>(&self, state: &mut H) where H: Hasher {
+        self.0.borrow().hash(state)
     }
 }
 
-
-// pub type StateRef = Rc<RefCell<State>>;
 
 impl Hash for State {
     fn hash<H: Hasher>(&self, state: &mut H) {
         std::ptr::hash(self, state);
     }
 }
+
+impl PartialEq for State {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+}
+
+impl Eq for State {}
 
 #[derive(Debug)]
 pub struct State {
@@ -72,8 +74,8 @@ impl State {
         sref
     }
 
-    pub fn get_node_by_transition(&mut self, transition: &char) -> Option<&StateRef> {
-        self.nodes.iter().find(|node| (node.borrow() as &State).transition.eq(transition))
+    pub fn get_node_by_transition(&self, transition: &char) -> Option<&StateRef> {
+        self.nodes.iter().find(|node| node.borrow().transition.eq(transition))
     }
 
     pub fn add_node_by_transition(&mut self, transition: &char, target_value: i16) -> (StateRef, i16) {
@@ -92,18 +94,18 @@ impl State {
 
     }
 
-    pub fn merge_path(root: StateRef, path: &Path, counter: &mut RangeFrom<i16>) -> MergeStatus {
+    pub fn merge_path(root: StateRef, path: &Path, counter: &mut IdGen) -> MergeStatus {
         Self::merge_items(root, path.items.iter(), counter)
     }
 
-    fn merge_states_with_path(states: &Vec<StateRef>, path: &Path, counter: &mut RangeFrom<i16>) -> MergeStatus {
-        let mut end_states = vec![];
+    fn merge_states_with_path(states: &HashSet<StateRef>, path: &Path, counter: &mut IdGen) -> MergeStatus {
+        let mut end_states = HashSet::new();
         let result = states.iter()
             .map(|state| Self::merge_path(state.clone(), path, counter))
             .any(|mut status| {
                 match status {
-                    MergeStatus::Added(ref mut states) => {
-                        end_states.append(states);
+                    MergeStatus::Added(mut states) => {
+                        end_states.extend(states.into_iter());
                         true
                     },
                     MergeStatus::Failed => false
@@ -117,9 +119,9 @@ impl State {
         }
     }
 
-    pub fn merge_items(root: StateRef, items: Iter<Edge>, counter: &mut RangeFrom<i16>) -> MergeStatus {
+    pub fn merge_items(root: StateRef, items: Iter<Edge>, counter: &mut IdGen) -> MergeStatus {
         let mut capture_tracker = CaptureTracker::new();
-        let mut target_value = counter.next().unwrap();
+        let mut target_value = counter.next();
         let mut current_states = HashSet::new();
         current_states.insert(root);
         for item in items {
@@ -127,20 +129,20 @@ impl State {
                 Edge::Char(transition) => {
                     // FIXME: adjust the target_value!
                     let states = current_states.into_iter()
-                        .map(|mut state| state.borrow_mut().add_node_by_transition(transition, target_value))
+                        .map(|mut state| state.borrow_mut().add_node_by_transition(transition, target_value as i16))
                         .map(|(state, _)| state) // follow up of fix me: the _ represents the remainder target_value
                         .collect();
                     MergeStatus::Added(states)
                 },
 
                 Edge::OneOf(possible_paths) => {
-                    let mut all_ends = vec![];
+                    let mut all_ends = HashSet::new();
                     let succeed = possible_paths
                         .iter()
                         .map(|path| Self::merge_states_with_path(&current_states, path, counter))
                         .all(|mut status| match status {
-                            MergeStatus::Added(ref mut ends) => {
-                                all_ends.append(ends);
+                            MergeStatus::Added(mut ends) => {
+                                all_ends.extend(ends.into_iter());
                                 true
                             },
                             MergeStatus::Failed => false
@@ -155,7 +157,7 @@ impl State {
                 Edge::Optional(optional_path) => {
                     match Self::merge_states_with_path(&current_states, optional_path, counter) {
                         MergeStatus::Added(mut ends) => {
-                            ends.append(&mut current_states);
+                            ends.extend(current_states.into_iter());
                             MergeStatus::Added(ends)
                         },
                         fail => fail
@@ -178,14 +180,14 @@ impl State {
         }
 
         // Connecting last states with end state
-        for mut state in &mut current_states {
-            state.borrow_mut().add_node(Self {
+        let rest = current_states.into_iter()
+            .map(|mut state| state.borrow_mut().add_node(Self {
                 value: 0,
                 nodes: vec![],
                 transition: '\0'
-            });
-        }
-        MergeStatus::Added(current_states)
+            }))
+            .collect();
+        MergeStatus::Added(rest)
     }
 
     pub fn all_combinations(&self) -> Vec<String> {

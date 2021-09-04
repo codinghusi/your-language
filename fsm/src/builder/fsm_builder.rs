@@ -1,3 +1,4 @@
+use crate::builder::id_gen::IdGen;
 use crate::FSM;
 use crate::path::Path;
 use crate::builder::state::{State, MergeStatus};
@@ -24,7 +25,7 @@ impl FSM_Builder {
 
     pub fn build(&self) -> FSM {
         let mut root = State::new_root();
-        let mut ids = State::id_gen();
+        let mut ids = IdGen::new();
         self.paths
             .iter()
             .map(|path| State::merge_path(root.clone(), path, &mut ids))

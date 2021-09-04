@@ -1,4 +1,4 @@
-
+use std::ops::RangeFrom;
 
 pub struct IdGen {
     iter: RangeFrom<usize>
@@ -12,6 +12,6 @@ impl IdGen {
     }
 
     pub fn next(&mut self) -> usize {
-        self.iter().next().unwrap()
+        self.iter.next().unwrap()
     }
 }
