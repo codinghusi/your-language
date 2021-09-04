@@ -1,10 +1,10 @@
-use crate::state_edge::StateEdge;
+use crate::builder::state::{State, StateRef};
 use std::rc::Rc;
 use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct FSM {
-    pub root: Rc<RefCell<StateEdge>>
+    pub root: StateRef
 }
 
 impl FSM {

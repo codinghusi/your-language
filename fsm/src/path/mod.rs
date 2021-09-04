@@ -4,4 +4,4 @@ mod capture;
 
 pub use edge::Edge;
 pub use path::Path;
-pub use capture::Capture;
+pub use capture::{Capture, CaptureItem, CaptureType, CaptureTracker};

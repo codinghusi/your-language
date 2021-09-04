@@ -8,31 +8,46 @@
 // use logos::Logos;
 
 use fsm::{FSM, FSM_Builder};
-use fsm::EdgeType;
-use fsm::{Path, PathItem, Item};
-
-fn foo(str: &str) -> Vec<EdgeType> {
-    str.chars().map(|c| EdgeType::Char(c)).collect::<Vec<_>>()
-}
+use fsm::{path::Path};
 
 fn main() {
 
     let builder = FSM_Builder::from(
         vec![
             Path::new()
-                .oneOf("abc")
-                .string("123"),
+                .one_of_chars("abc")
+                .string("123")
+                .optional_string(String::from("lol")),
             Path::new()
-                .oneOf("123")
-                .string("abc"),
-            Path::new()
-                .oneOf("123")
-                .string("123"),
+                .optional_string(String::from("opt"))
+                .string("ional")
         ]
     );
 
-    let fsm = builder.build();
 
+
+    // let builder = FSM_Builder::from(
+    //     vec![
+    //         Path::new()
+    //             .one_of_chars("abc")
+    //             .string("123"),
+    //         Path::new()
+    //             .capture_text(String::from("first_char"), Path::new()
+    //                 .one_of_chars("123")
+    //             )
+    //             .string("abc")
+    //             .capture_text(String::from("foo"), Path::new()
+    //                 .optional_string(String::from("foo"))
+    //                 .cycle(Path::new().string("abc"))
+    //             ),
+    //         Path::new()
+    //             .one_of_chars("123")
+    //             .string("123"),
+    //     ]
+    // );
+
+    let fsm = builder.build();
+    println!("{:?}", fsm.root.borrow().all_combinations());
 
 
 

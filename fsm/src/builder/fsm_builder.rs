@@ -1,6 +1,6 @@
 use crate::FSM;
 use crate::path::Path;
-use crate::state_edge::{StateEdge, MergeStatus};
+use crate::builder::state::{State, MergeStatus};
 use std::rc::Rc;
 use std::convert::TryInto;
 
@@ -23,11 +23,11 @@ impl FSM_Builder {
     }
 
     pub fn build(&self) -> FSM {
-        let mut root = StateEdge::new_root();
-        let mut ids = StateEdge::id_gen();
+        let mut root = State::new_root();
+        let mut ids = State::id_gen();
         self.paths
             .iter()
-            .map(|path| StateEdge::merge_path(Rc::clone(&root), path, &mut ids))
+            .map(|path| State::merge_path(root.clone(), path, &mut ids))
             .for_each(|status| {
                 match status {
                     MergeStatus::Failed => panic!("building failed..."), // TODO: make this more proper into a Result<>
