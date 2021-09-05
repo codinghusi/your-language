@@ -17,10 +17,10 @@ fn main() {
             Path::new()
                 .one_of_chars("abc")
                 .string("123")
-                .optional_string(String::from("lol")),
+                .optional_string("lol"),
             Path::new()
-                .optional_string(String::from("opt"))
-                .string("ional")
+                .string("opt")
+                .optional_string("ional")
         ]
     );
 

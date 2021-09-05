@@ -39,11 +39,10 @@ impl Path {
 
 
     pub fn string(mut self, str: &str) -> Self {
-        let mut tmp = self;
         for c in str.chars() {
-            tmp = tmp.char(c);
+            self = self.char(c);
         }
-        tmp
+        self
     }
 
     pub fn capture(mut self, key: String, path: Path) -> Self {
@@ -66,8 +65,8 @@ impl Path {
         self.add(Edge::Optional(path))
     }
 
-    pub fn optional_string(mut self, str: String) -> Self {
-        self.optional(Path::new().string(&str))
+    pub fn optional_string(mut self, str: &str) -> Self {
+        self.optional(Path::new().string(str))
     }
 
     pub fn cycle(mut self, path: Path) -> Self {

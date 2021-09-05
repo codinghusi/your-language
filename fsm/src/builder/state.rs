@@ -7,6 +7,7 @@ use std::collections::HashSet;
 use std::hash::Hasher;
 use std::hash::Hash;
 use crate::builder::id_gen::IdGen;
+use std::hint::unreachable_unchecked;
 
 pub enum MergeStatus {
     Added(HashSet<StateRef>),
@@ -39,7 +40,7 @@ impl Hash for StateRef {
 
 impl Hash for State {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        std::ptr::hash(self, state);
+        std::ptr::hash(&self, state);
     }
 }
 
@@ -79,7 +80,7 @@ impl State {
     }
 
     pub fn add_node_by_transition(&mut self, transition: &char, target_value: i16) -> (StateRef, i16) {
-        println!("adding {}", transition);
+        println!("adding {}-{}", self.transition, transition);
         match self.get_node_by_transition(transition) {
             Some(state_ref) => (state_ref.clone(), target_value),
             None => (
@@ -99,23 +100,22 @@ impl State {
     }
 
     fn merge_states_with_path(states: &HashSet<StateRef>, path: &Path, counter: &mut IdGen) -> MergeStatus {
-        let mut end_states = HashSet::new();
-        let result = states.iter()
+        let mut failed = false;
+        // let result: Result<HashSet<StateRef>, MergeStatus> = states
+        let result: Result<Vec<_>, _> = states
+            .iter()
             .map(|state| Self::merge_path(state.clone(), path, counter))
-            .any(|mut status| {
+            .map(|status| {
                 match status {
-                    MergeStatus::Added(mut states) => {
-                        end_states.extend(states.into_iter());
-                        true
-                    },
-                    MergeStatus::Failed => false
+                    MergeStatus::Added(mut states) => Ok(states.into_iter()),
+                    failed => Err(failed)
                 }
-            });
+            })
+            .collect();
 
-        if result {
-            MergeStatus::Added(end_states)
-        } else {
-            MergeStatus::Failed
+        match result {
+            Ok(states) => MergeStatus::Added(states.into_iter().flatten().collect()),
+            Err(failed) => failed
         }
     }
 
@@ -125,9 +125,12 @@ impl State {
         let mut current_states = HashSet::new();
         current_states.insert(root);
         for item in items {
+
             let status = match item {
                 Edge::Char(transition) => {
                     // FIXME: adjust the target_value!
+                    println!("adding ends: {}", current_states.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>().join(", "));
+
                     let states = current_states.into_iter()
                         .map(|mut state| state.borrow_mut().add_node_by_transition(transition, target_value as i16))
                         .map(|(state, _)| state) // follow up of fix me: the _ represents the remainder target_value
@@ -155,8 +158,10 @@ impl State {
                 },
 
                 Edge::Optional(optional_path) => {
+                    println!("opt adding {:?}", current_states.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>());
                     match Self::merge_states_with_path(&current_states, optional_path, counter) {
                         MergeStatus::Added(mut ends) => {
+                            println!("opt merging {:?}", ends.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>());
                             ends.extend(current_states.into_iter());
                             MergeStatus::Added(ends)
                         },
