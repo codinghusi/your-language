@@ -1,17 +1,22 @@
-use std::ops::RangeFrom;
 
+#[derive(Clone)]
 pub struct IdGen {
-    iter: RangeFrom<usize>
+    last_index: usize
 }
 
 impl IdGen {
     pub fn new() -> Self {
         Self {
-            iter: (0..).into_iter()
+            last_index: 0
         }
     }
 
     pub fn next(&mut self) -> usize {
-        self.iter.next().unwrap()
+        self.last_index += 1;
+        self.last_index
+    }
+
+    pub fn last(&self) -> usize {
+        self.last_index
     }
 }

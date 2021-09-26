@@ -15,6 +15,9 @@ fn main() {
     let builder = FSM_Builder::from(
         vec![
             Path::new()
+                // .capture_text(String::from("first_char"), Path::new()
+                //     .one_of_chars("abc")
+                // )
                 .one_of_chars("abc")
                 .string("123")
                 .optional_string("lol"),

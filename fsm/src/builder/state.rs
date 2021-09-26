@@ -8,6 +8,7 @@ use std::hash::Hasher;
 use std::hash::Hash;
 use crate::builder::id_gen::IdGen;
 use std::hint::unreachable_unchecked;
+use crate::builder::tracker::Tracker;
 
 pub enum MergeStatus {
     Added(HashSet<StateRef>),
@@ -54,7 +55,7 @@ impl Eq for State {}
 
 #[derive(Debug)]
 pub struct State {
-    pub value: i16,
+    pub value: usize,
     pub nodes: Vec<StateRef>,
     pub transition: char
 }
@@ -79,32 +80,29 @@ impl State {
         self.nodes.iter().find(|node| node.borrow().transition.eq(transition))
     }
 
-    pub fn add_node_by_transition(&mut self, transition: &char, target_value: i16) -> (StateRef, i16) {
-        println!("adding {}-{}", self.transition, transition);
+    pub fn add_node_by_transition(&mut self, transition: &char, tracker: &Tracker) -> (StateRef, usize) {
         match self.get_node_by_transition(transition) {
-            Some(state_ref) => (state_ref.clone(), target_value),
+            Some(state_ref) => (state_ref.clone(), tracker.current_target_value()),
             None => (
                 self.add_node(Self {
-                    value: target_value,
+                    value: tracker.current_target_value(),
                     nodes: vec![],
                     transition: *transition
                 }),
                 0
             )
         }
-
     }
 
-    pub fn merge_path(root: StateRef, path: &Path, counter: &mut IdGen) -> MergeStatus {
-        Self::merge_items(root, path.items.iter(), counter)
+    pub fn merge_path(root: StateRef, path: &Path, tracker: &mut Tracker) -> MergeStatus {
+        Self::merge_items(root, path.items.iter(), tracker)
     }
 
-    fn merge_states_with_path(states: &HashSet<StateRef>, path: &Path, counter: &mut IdGen) -> MergeStatus {
+    fn merge_states_with_path(states: &HashSet<StateRef>, path: &Path, tracker: &mut Tracker) -> MergeStatus {
         let mut failed = false;
-        // let result: Result<HashSet<StateRef>, MergeStatus> = states
         let result: Result<Vec<_>, _> = states
             .iter()
-            .map(|state| Self::merge_path(state.clone(), path, counter))
+            .map(|state| Self::merge_path(state.clone(), path, &mut tracker.clone()))
             .map(|status| {
                 match status {
                     MergeStatus::Added(mut states) => Ok(states.into_iter()),
@@ -119,30 +117,33 @@ impl State {
         }
     }
 
-    pub fn merge_items(root: StateRef, items: Iter<Edge>, counter: &mut IdGen) -> MergeStatus {
-        let mut capture_tracker = CaptureTracker::new();
-        let mut target_value = counter.next();
+    pub fn merge_items(root: StateRef, items: Iter<Edge>, tracker: &mut Tracker) -> MergeStatus {
         let mut current_states = HashSet::new();
         current_states.insert(root);
-        for item in items {
 
+        // path items will be iterated,
+        // nested items will be handled recursively
+        for item in items {
             let status = match item {
+                // given are n states (open ends of the fsm paths)
+
+                // appends the char to all n states
                 Edge::Char(transition) => {
                     // FIXME: adjust the target_value!
-                    println!("adding ends: {}", current_states.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>().join(", "));
 
                     let states = current_states.into_iter()
-                        .map(|mut state| state.borrow_mut().add_node_by_transition(transition, target_value as i16))
+                        .map(|mut state| state.borrow_mut().add_node_by_transition(transition, &tracker))
                         .map(|(state, _)| state) // follow up of fix me: the _ represents the remainder target_value
                         .collect();
                     MergeStatus::Added(states)
                 },
 
+                // splits all n states to n*m states, appends each 'n' all 'm' possible paths
                 Edge::OneOf(possible_paths) => {
                     let mut all_ends = HashSet::new();
                     let succeed = possible_paths
                         .iter()
-                        .map(|path| Self::merge_states_with_path(&current_states, path, counter))
+                        .map(|path| Self::merge_states_with_path(&current_states, path, &mut tracker.clone()))
                         .all(|mut status| match status {
                             MergeStatus::Added(mut ends) => {
                                 all_ends.extend(ends.into_iter());
@@ -157,11 +158,10 @@ impl State {
                     }
                 },
 
+                // splits states into 2*n, one with the optional path in it and one without
                 Edge::Optional(optional_path) => {
-                    println!("opt adding {:?}", current_states.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>());
-                    match Self::merge_states_with_path(&current_states, optional_path, counter) {
+                    match Self::merge_states_with_path(&current_states, optional_path, tracker) {
                         MergeStatus::Added(mut ends) => {
-                            println!("opt merging {:?}", ends.iter().map(|state| state.borrow().transition.to_string()).collect::<Vec<_>>());
                             ends.extend(current_states.into_iter());
                             MergeStatus::Added(ends)
                         },
@@ -177,6 +177,8 @@ impl State {
                     unimplemented!()
                 }
             };
+
+            tracker.reserve_last_target_value();
 
             match status {
                 MergeStatus::Added(states) => current_states = states,
@@ -195,19 +197,20 @@ impl State {
         MergeStatus::Added(rest)
     }
 
-    pub fn all_combinations(&self) -> Vec<String> {
+    pub fn all_combinations(&self) -> Vec<(String, usize)> {
         let transition = if self.transition.eq(&'\0') {
             String::new()
         } else {
             self.transition.to_string()
         };
         if self.nodes.len() == 0 {
-            return vec![transition];
+            return vec![(transition, self.value)];
         }
         let mut combinations = vec![];
 
         for node in &self.nodes {
-            combinations.extend(node.borrow().all_combinations().iter().map(|combination| format!("{}{}", transition, combination)))
+            combinations.extend(node.borrow().all_combinations().iter().map(|combination|
+                ( format!("{}{}", transition, combination.0), node.borrow().value )))
         }
         combinations
     }
