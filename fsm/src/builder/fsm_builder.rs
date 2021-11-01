@@ -5,6 +5,8 @@ use crate::builder::state::{State, MergeStatus};
 use std::rc::Rc;
 use std::convert::TryInto;
 use crate::builder::tracker::Tracker;
+use crate::machine::machine::Machine;
+
 
 pub struct FSM_Builder {
     paths: Vec<Path>
@@ -22,6 +24,15 @@ impl FSM_Builder {
     pub fn add(&mut self, path: Path) -> &mut Self {
         self.paths.push(path);
         self
+    }
+
+    pub fn build_machine(&self) -> Result<Machine, String> {
+        let mut machine = Machine::empty();
+        let root = *machine.get_root_state();
+        for path in &self.paths {
+            machine.insert_path_at(&root, path)?;
+        }
+        Ok(machine)
     }
 
     pub fn build(&self) -> FSM {

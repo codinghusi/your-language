@@ -9,23 +9,41 @@
 
 use fsm::{FSM, FSM_Builder};
 use fsm::{path::Path};
+use fsm::machine::machine::Machine;
 
 fn main() {
 
     let builder = FSM_Builder::from(
         vec![
             Path::new()
-                // .capture_text(String::from("first_char"), Path::new()
-                //     .one_of_chars("abc")
-                // )
-                .one_of_chars("abc")
-                .string("123")
-                .optional_string("lol"),
-            Path::new()
-                .string("opt")
-                .optional_string("ional")
+                .string("Hello, ")
+                .one_of(vec![
+                    Path::new().string("World"),
+                    Path::new().string("Foo"),
+                    Path::new().string("Bar"),
+                ])
         ]
     );
+
+    let machine = builder.build_machine().unwrap();
+
+    // println!("{:?}", machine);
+    println!("{:?}", machine.all_combinations());
+
+    // let builder = FSM_Builder::from(
+    //     vec![
+    //         Path::new()
+    //             // .capture_text(String::from("first_char"), Path::new()
+    //             //     .one_of_chars("abc")
+    //             // )
+    //             .one_of_chars("abc")
+    //             .string("123")
+    //             .optional_string("lol"),
+    //         Path::new()
+    //             .string("opt")
+    //             .optional_string("ional")
+    //     ]
+    // );
 
 
 
@@ -49,8 +67,8 @@ fn main() {
     //     ]
     // );
 
-    let fsm = builder.build();
-    println!("{:?}", fsm.root.borrow().all_combinations());
+    // let fsm = builder.build();
+    // println!("{:?}", fsm.root.borrow().all_combinations());
 
 
 

@@ -5,4 +5,4 @@ pub use fsm::FSM;
 mod fsm;
 mod builder;
 pub mod path;
-
+pub mod machine;
