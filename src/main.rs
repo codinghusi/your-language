@@ -20,8 +20,11 @@ fn main() {
                 .one_of(vec![
                     Path::new().string("World"),
                     Path::new().string("Foo"),
+                    Path::new().string("Fabian"),
                     Path::new().string("Bar"),
                 ])
+                .optional_string("!!!")
+                .end(0)
         ]
     );
 

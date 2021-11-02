@@ -175,6 +175,10 @@ impl State {
 
                 Edge::Cycle(_) => {
                     unimplemented!()
+                },
+
+                Edge::Final(_) => {
+                    unimplemented!()
                 }
             };
 

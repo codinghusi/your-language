@@ -7,5 +7,6 @@ pub enum Edge {
     OneOf(Vec<Path>),
     Optional(Path),
     Capture(CaptureItem),
-    Cycle(Path)
+    Cycle(Path),
+    Final(usize)
 }

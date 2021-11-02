@@ -112,6 +112,26 @@ impl Machine {
                         .collect::<Result<Vec<Vec<_>>, _>>()?
                         .into_iter().flatten().flatten().collect()
                 },
+                Optional(path) => {
+                    // Paths with 'path' and paths without 'path' (skipped)
+                    let mut lose_ends = current_states.clone();
+                    lose_ends.append(
+                        &mut current_states.iter().try_fold::<_, _, Result<Vec<usize>, String>>(
+                            vec![],
+                            |mut ret, state| {
+                                ret.append(&mut self.insert_path_at(state, path)?);
+                                Ok(ret)
+                            },
+                        )?
+                    );
+                    lose_ends
+                },
+                Final(value) => {
+                    current_states.clone().into_iter().for_each(|state| {
+                        self.final_states.insert(state);
+                    });
+                    current_states
+                }
                 _ => unimplemented!("given path item not implemented")
             }
         }
@@ -127,7 +147,7 @@ impl Machine {
     }
 
     fn all_combinations_internal(&self, state: &usize) -> Vec<String> {
-        let result: Vec<_> = self.get_transition(state).unwrap().iter().enumerate()
+        let mut result: Vec<_> = self.get_transition(state).unwrap().iter().enumerate()
             .filter(|(c, destination)| **destination != ERROR_STATE)
             .flat_map(|(c, destination)| self.all_combinations_internal(destination).iter()
                 .map(
@@ -136,10 +156,9 @@ impl Machine {
                 .collect::<Vec<_>>()
             )
             .collect();
-        if result.len() == 0 {
-            vec!["".to_string()]
-        } else {
-            result
+        if self.final_states.contains(state) {
+            result.push("".to_string());
         }
+        result
     }
 }
