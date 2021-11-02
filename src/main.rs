@@ -19,11 +19,11 @@ fn main() {
                 .string("Hello, ")
                 .one_of(vec![
                     Path::new().string("World"),
+                    Path::new().string("Woorlde"),
                     Path::new().string("Foo"),
-                    Path::new().string("Fabian"),
-                    Path::new().string("Bar"),
                 ])
-                .optional_string("!!!")
+                .cycle(Path::new().string("!"))
+                .optional_string(" How are you?")
                 .end(0)
         ]
     );
@@ -31,7 +31,8 @@ fn main() {
     let machine = builder.build_machine().unwrap();
 
     // println!("{:?}", machine);
-    println!("{:?}", machine.all_combinations());
+    // println!("{:?}", machine.all_combinations());
+    println!("{}", machine.export_xstatejs());
 
     // let builder = FSM_Builder::from(
     //     vec![

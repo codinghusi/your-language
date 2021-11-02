@@ -97,32 +97,36 @@ impl Machine {
         let mut current_states = states;
         for item in &path.items {
             // merge current path item into all given states
-            // also get the new list of all next states that need merging. (state_indexes.len() >= previous length)
+            // also get the new list of all next states that need merging.
             use crate::path::Edge::*;
             current_states = match item {
                 Char(c) => {
-                    current_states.iter().map(|state| self.setup_transition(state, *c)).collect::<Result<_, _>>()?
+                    let mut new_state = None;
+                    current_states.iter().map(|state| {
+                        if let Some(new_state) = new_state {
+                            self.set_transition(state, *c, new_state)?;
+                        } else {
+                            new_state = Some(self.setup_transition(state, *c)?);
+                        }
+                        Ok(())
+                    }).collect::<Result<(), String>>()?;
+                    if let Some(new_state) = new_state {
+                        vec![new_state]
+                    } else {
+                        vec![]
+                    }
                 },
                 OneOf(paths) => {
                     paths.iter()
-                        .map(|path| current_states.iter()
-                            .map(|state| self.insert_path_at(state, path))
-                            .collect::<Result<_, _>>()
-                        )
+                        .map(|path| self.insert_path_at_states(current_states.clone(), path))
                         .collect::<Result<Vec<Vec<_>>, _>>()?
-                        .into_iter().flatten().flatten().collect()
+                        .into_iter().flatten().collect()
                 },
                 Optional(path) => {
                     // Paths with 'path' and paths without 'path' (skipped)
                     let mut lose_ends = current_states.clone();
                     lose_ends.append(
-                        &mut current_states.iter().try_fold::<_, _, Result<Vec<usize>, String>>(
-                            vec![],
-                            |mut ret, state| {
-                                ret.append(&mut self.insert_path_at(state, path)?);
-                                Ok(ret)
-                            },
-                        )?
+                        &mut self.insert_path_at_states(current_states, path)?
                     );
                     lose_ends
                 },
@@ -131,6 +135,14 @@ impl Machine {
                         self.final_states.insert(state);
                     });
                     current_states
+                },
+                Cycle(path) => {
+                    let lose_ends = self.insert_path_at_states(current_states.clone(), path)?;
+                    current_states.iter().for_each(|begin| lose_ends.iter().for_each(|end| {
+                        self.apply_transitions(begin, end);
+                    }));
+
+                    lose_ends
                 }
                 _ => unimplemented!("given path item not implemented")
             }
@@ -138,18 +150,34 @@ impl Machine {
         Ok(current_states)
     }
 
+    fn apply_transitions(&mut self, source: &usize, destination: &usize) -> Result<(), String>{
+        let source_table = self.get_transition(source)?.clone();
+
+        source_table.iter().enumerate()
+            .filter(|(c, target)| **target != ERROR_STATE)
+            .map(|(c, target)| self.set_transition(destination, c as u8 as char, *target))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(())
+    }
+
     pub fn is_ready(&self) -> bool {
         self.size > 1
     }
 
     pub fn all_combinations(&self) -> Vec<String> {
-        self.all_combinations_internal(self.get_root_state())
+        self.all_combinations_internal(self.get_root_state(), &mut HashSet::new())
     }
 
-    fn all_combinations_internal(&self, state: &usize) -> Vec<String> {
+    // not working well with cycles
+    fn all_combinations_internal(&self, state: &usize, visited: &mut HashSet<usize>) -> Vec<String> {
+        if visited.contains(state) {
+            return vec![];
+        }
+        visited.insert(*state);
         let mut result: Vec<_> = self.get_transition(state).unwrap().iter().enumerate()
             .filter(|(c, destination)| **destination != ERROR_STATE)
-            .flat_map(|(c, destination)| self.all_combinations_internal(destination).iter()
+            .flat_map(|(c, destination)| self.all_combinations_internal(destination, visited).iter()
                 .map(
                     |str| format!("{}{}", c as u8 as char, str)
                 )
@@ -160,5 +188,36 @@ impl Machine {
             result.push("".to_string());
         }
         result
+    }
+
+    pub fn export_xstatejs(&self) -> String {
+        let mut states = self.transition_table.iter().collect::<Vec<_>>();
+        states.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap());
+        let states = states.iter()
+            .map(|(state, func)| {
+                let transitions = func.iter().enumerate()
+                    .filter(|(c, target)| **target != ERROR_STATE)
+                    .map(|(c, target)| format!("'{}': '{}'", c as u8 as char, target))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let stateType = if self.final_states.contains(state) {
+                    "type: 'final'"
+                } else {
+                    ""
+                };
+                format!("\t'{}': {{ on: {{ {} }}, {} }}", state, transitions, stateType)
+            })
+            .collect::<Vec<_>>()
+            .join(",\n");
+
+        format!(r"import {{ createMachine }} from 'xstate';
+
+const machine = createMachine({{
+  id: 'machine',
+  initial: '1',
+  states: {{
+{}
+  }}
+}});", states)
     }
 }
