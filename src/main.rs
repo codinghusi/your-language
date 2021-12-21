@@ -1,4 +1,3 @@
-
 // use ast::token::Token;
 // use ast::lib::parser::{
 //     buffer::ParseBuffer,
@@ -7,32 +6,44 @@
 // use ast::nodes::document::DocumentNode;
 // use logos::Logos;
 
-use fsm::{FSM, FSM_Builder};
-use fsm::{path::Path};
 use fsm::machine::machine::Machine;
+use fsm::path::Path;
+use fsm::{FSM_Builder, FSM};
 
 fn main() {
+    // following should parse: "function my_fn() {;;;;;}"
+    // and output: { "fn_name": "my_fn" }
+    let builder = FSM_Builder::from(vec![Path::new()
+        .string("function ")
+        .cycle(Path::new().capture_text(
+            String::from("fn_name"),
+            Path::new().one_of_chars("abcdefghijklmnopqrstuvwxyz_"),
+        ))
+        .string("() {")
+        .cycle(Path::new().char(';'))
+        .char('}')]);
 
-    let builder = FSM_Builder::from(
-        vec![
-            Path::new()
-                .string("Hello, ")
-                .one_of(vec![
-                    Path::new().string("World"),
-                    Path::new().string("Woorlde"),
-                    Path::new().string("Foo"),
-                ])
-                .cycle(Path::new().string("!"))
-                .optional_string(" How are you?")
-                .end(0)
-        ]
-    );
+    // let builder = FSM_Builder::from(
+    //     vec![
+    //         Path::new()
+    //             .string("abc")
+    //             .one_of_chars("123")
+    //             .optional_string("opt")
+    //             .string("789")
+    //             .end(0)
+    //     ]
+    // );
 
     let machine = builder.build_machine().unwrap();
 
     // println!("{:?}", machine);
     // println!("{:?}", machine.all_combinations());
-    println!("{}", machine.export_xstatejs());
+    // println!("{}", machine.export_xstatejs());
+
+    println!(
+        "{:?}",
+        machine.interpret_slow("function abc() {;;;;;}").unwrap()
+    );
 
     // let builder = FSM_Builder::from(
     //     vec![
@@ -48,8 +59,6 @@ fn main() {
     //             .optional_string("ional")
     //     ]
     // );
-
-
 
     // let builder = FSM_Builder::from(
     //     vec![
@@ -73,9 +82,6 @@ fn main() {
 
     // let fsm = builder.build();
     // println!("{:?}", fsm.root.borrow().all_combinations());
-
-
-
 
     // let fsm = FSM::build(vec![
     //     foo("123"),
@@ -120,7 +126,3 @@ fn main() {
     // let document: DocumentNode = buffer.parse().unwrap();
     // println!("{}", serde_json::to_string(&document).unwrap());
 }
-
-
-
-

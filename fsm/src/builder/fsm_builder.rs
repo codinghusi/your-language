@@ -1,15 +1,14 @@
 use crate::builder::id_gen::IdGen;
-use crate::FSM;
-use crate::path::Path;
-use crate::builder::state::{State, MergeStatus};
-use std::rc::Rc;
-use std::convert::TryInto;
+use crate::builder::state::{MergeStatus, State};
 use crate::builder::tracker::Tracker;
 use crate::machine::machine::Machine;
-
+use crate::path::Path;
+use crate::FSM;
+use std::convert::TryInto;
+use std::rc::Rc;
 
 pub struct FSM_Builder {
-    paths: Vec<Path>
+    paths: Vec<Path>,
 }
 
 impl FSM_Builder {
@@ -30,7 +29,7 @@ impl FSM_Builder {
         let mut machine = Machine::empty();
         let root = *machine.get_root_state();
         for path in &self.paths {
-            machine.insert_path_at(&root, path)?;
+            machine.insert_path_at(&root, path, None)?;
         }
         Ok(machine)
     }
@@ -45,7 +44,7 @@ impl FSM_Builder {
             .for_each(|status| {
                 match status {
                     MergeStatus::Failed => panic!("building failed..."), // TODO: make this more proper into a Result<>
-                    _ => ()
+                    _ => (),
                 }
             });
         FSM { root }
