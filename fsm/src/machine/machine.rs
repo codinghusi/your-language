@@ -1,8 +1,6 @@
-use std::collections::{HashMap, HashSet};
-
-use crate::machine::capture_mapping::{ItemValue, MappingResult};
-// use crate::machine::capture_mapping::CaptureMapping;
+// use super::capture_mapping::{ItemValue, MappingResult};
 use crate::path::{CaptureType, Edge, Path};
+use std::collections::{HashMap, HashSet};
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
 // TODO: state 0 needs to be an error catching state
@@ -12,6 +10,60 @@ const ERROR_STATE: usize = 0;
 pub type TransitionFunction = [usize; 255];
 pub type StateId = usize;
 pub type CaptureId = usize;
+
+#[derive(Debug)]
+pub struct CaptureEnds {
+    pub capture_id: CaptureId,
+    pub end_states: Vec<StateId>,
+}
+
+#[derive(Debug, Clone)]
+pub enum CaptureValue {
+    String(CaptureId),
+    List(CaptureId),
+    Map(HashMap<String, CaptureValue>),
+}
+
+#[derive(Clone)]
+pub struct Context {
+    pub items: HashMap<String, CaptureValue>,
+    pub is_in_cycle: bool,
+    pub target_state: Option<StateId>,
+}
+
+impl Context {
+    pub fn new() -> Self {
+        Context {
+            items: HashMap::new(),
+            is_in_cycle: false,
+            target_state: None,
+        }
+    }
+
+    pub fn with_target_state(&self, state: StateId) -> Self {
+        Context {
+            items: self.items.clone(),
+            is_in_cycle: self.is_in_cycle,
+            target_state: Some(state),
+        }
+    }
+
+    pub fn without_target_state(&self) -> Self {
+        Context {
+            items: self.items.clone(),
+            is_in_cycle: self.is_in_cycle,
+            target_state: None,
+        }
+    }
+
+    pub fn without_items(&self) -> Self {
+        Context {
+            items: HashMap::new(),
+            is_in_cycle: self.is_in_cycle,
+            target_state: self.target_state,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Machine {
@@ -28,7 +80,7 @@ pub struct Machine {
     // capture_mapping: CaptureMapping,  // mapping will be implemented later // for mapping the key-value/flat structures of captures into a tree-structure
     capture_count: usize,
     // tracks how many caputures are used. Used to generate auto-increment ids for captures
-    capture_table: HashMap<StateId, (Vec<StateId>, CaptureId)>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
+    capture_table: HashMap<StateId, CaptureEnds>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
 }
 
 // Note: First state is the error state
@@ -50,7 +102,7 @@ impl Machine {
     pub fn from_path(path: &Path) -> Self {
         let mut machine = Self::empty();
         let state = machine.add_state();
-        machine.insert_path_at(&state, path, None);
+        machine.insert_path_at(&state, path, &mut Context::new());
         machine
     }
 
@@ -139,35 +191,35 @@ impl Machine {
         &mut self,
         state: &usize,
         path: &Path,
-        to: Option<StateId>,
+        context: &mut Context,
     ) -> Result<Vec<usize>, String> {
-        self.insert_path_at_states(vec![*state], path, to)
+        self.insert_path_at_states(vec![*state], path, context)
     }
 
     pub fn insert_edge_at_states(
         &mut self,
         states: Vec<usize>,
         item: &Edge,
-        to: Option<StateId>,
+        context: &mut Context,
     ) -> Result<Vec<usize>, String> {
         // merge edge into all given states
         // also get the new list of all next states that need merging.
         use crate::path::Edge::*;
         let end_states = Ok(match item {
             Char(c) => {
-                let mut new_state = to;
+                let mut to_state = context.target_state;
                 states
                     .iter()
                     .map(|state| {
-                        if let Some(new_state) = new_state {
+                        if let Some(new_state) = to_state {
                             self.set_transition(state, *c, new_state)?;
                         } else {
-                            new_state = Some(self.setup_transition(state, *c)?);
+                            to_state = Some(self.setup_transition(state, *c)?);
                         }
                         Ok(())
                     })
                     .collect::<Result<(), String>>()?;
-                if let Some(new_state) = new_state {
+                if let Some(new_state) = to_state {
                     vec![new_state]
                 } else {
                     vec![]
@@ -176,17 +228,24 @@ impl Machine {
             OneOf(paths) => {
                 let mut paths = paths.iter();
                 if let Some(first) = paths.next() {
+                    // Step 1: insert the first path
                     let mut other_lose_ends = vec![];
                     let mut first_lose_ends =
-                        self.insert_path_at_states(states.clone(), first, to.clone())?;
+                        self.insert_path_at_states(states.clone(), first, context)?;
+
+                    // Step 2: Grab any end state, into those all other paths will be merged into
                     let closing = first_lose_ends
                         .first()
                         .ok_or("it's illegal to provide an empty path!".to_string())?; // TODO: add this note to the documentation later on
+
+                    // Step 3: insert all path with end state as the same as the first path
+                    let mut new_context = context.with_target_state(*closing);
+
                     for path in paths {
                         other_lose_ends.append(&mut self.insert_path_at_states(
                             states.clone(),
                             path,
-                            Some(*closing),
+                            &mut new_context,
                         )?);
                     }
                     first_lose_ends.append(&mut other_lose_ends);
@@ -197,7 +256,7 @@ impl Machine {
             }
             Optional(path) => {
                 // Paths with 'path' and paths without 'path' (skipped)
-                let mut lose_ends = self.insert_path_at_states(states.clone(), path, to)?;
+                let mut lose_ends = self.insert_path_at_states(states.clone(), path, context)?;
                 lose_ends.append(&mut states.clone());
                 lose_ends
             }
@@ -208,7 +267,7 @@ impl Machine {
                 states
             }
             Cycle(path) => {
-                let lose_ends = self.insert_path_at_states(states.clone(), path, to)?;
+                let lose_ends = self.insert_path_at_states(states.clone(), path, context)?;
                 states.iter().for_each(|begin| {
                     lose_ends.iter().for_each(|end| {
                         self.apply_transitions(begin, end);
@@ -221,16 +280,37 @@ impl Machine {
                 CaptureType::Text => {
                     let mut lose_ends = vec![];
                     let capture = self.add_capture();
+
+                    // setup capturing
                     for start in states {
-                        let mut ends = self.insert_path_at(&start, &item.path, to)?;
-                        self.capture_table.insert(start, (ends.clone(), capture));
+                        let mut ends = self.insert_path_at(&start, &item.path, context)?;
+                        self.capture_table.insert(
+                            start,
+                            CaptureEnds {
+                                capture_id: capture,
+                                end_states: ends.clone(),
+                            },
+                        );
                         lose_ends.append(&mut ends);
                     }
+
+                    // setup mapping
+                    context
+                        .items
+                        .insert(String::from(&item.key), CaptureValue::String(capture));
+
                     lose_ends
                 }
-                CaptureType::Struct => unimplemented!(),
+                CaptureType::Struct => {
+                    let mut new_context = context.without_items();
+                    let ret = self.insert_path_at_states(states, &item.path, &mut new_context)?;
+                    context.items.insert(
+                        String::from(&item.key),
+                        CaptureValue::Map(new_context.items),
+                    );
+                    ret
+                }
             },
-            _ => unimplemented!("given path item not implemented"),
         });
 
         end_states
@@ -242,17 +322,21 @@ impl Machine {
         &mut self,
         states: Vec<usize>,
         path: &Path,
-        to: Option<StateId>,
+        context: &mut Context,
     ) -> Result<Vec<usize>, String> {
         if path.items.len() == 0 {
             return Ok(states); // TODO: could also throw an error that path.items are empty
         }
         let mut current_states = states;
         for edge in path.items.iter().take(path.items.len() - 1) {
-            current_states = self.insert_edge_at_states(current_states, &edge, None)?;
+            current_states = self.insert_edge_at_states(
+                current_states,
+                &edge,
+                &mut context.without_target_state(),
+            )?;
         }
         let last = path.items.last().unwrap(); // TODO: this .unwrap() could be done unchecked
-        current_states = self.insert_edge_at_states(current_states, last, to)?;
+        current_states = self.insert_edge_at_states(current_states, last, context)?;
         Ok(current_states)
     }
 
@@ -278,8 +362,11 @@ impl Machine {
 
             // start capture when needed
             if let Some(marker) = self.capture_table.get(&current_state) {
-                let (ends, capture_id) = marker;
-                for state in ends {
+                let CaptureEnds {
+                    capture_id,
+                    end_states,
+                } = marker;
+                for state in end_states {
                     pending_captures.insert((i, *state, *capture_id));
                 }
                 println!("start: {:?}", pending_captures);

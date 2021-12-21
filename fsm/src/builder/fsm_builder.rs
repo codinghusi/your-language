@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::builder::id_gen::IdGen;
 use crate::builder::state::{MergeStatus, State};
 use crate::builder::tracker::Tracker;
+use crate::machine::machine::Context;
 use crate::machine::machine::Machine;
 use crate::path::Path;
 use crate::FSM;
@@ -30,7 +31,7 @@ impl FSM_Builder {
         let mut machine = Machine::empty();
         let root = *machine.get_root_state();
         for path in &self.paths {
-            machine.insert_path_at(&root, path, None)?;
+            machine.insert_path_at(&root, path, &mut Context::new())?;
         }
         Ok(machine)
     }
