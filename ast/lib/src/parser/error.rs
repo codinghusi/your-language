@@ -1,8 +1,6 @@
 use std::fmt;
-use crate::parser::{
-    unexpected::Unexpected,
-    err_values::ErrValues
-};
+
+use crate::parser::{err_values::ErrValues, unexpected::Unexpected};
 
 pub enum ParseError<Token: Clone> {
     Peeked(Unexpected<Token>),
@@ -17,5 +15,3 @@ impl<Token: Clone> fmt::Debug for ParseError<Token> {
         }
     }
 }
-
-

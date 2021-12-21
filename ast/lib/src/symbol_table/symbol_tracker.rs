@@ -1,4 +1,3 @@
-
 use super::symbol::{Symbol, SymbolUsage};
 
 pub struct SymbolTracker {
@@ -12,7 +11,7 @@ impl SymbolTracker {
         Self {
             declared: false,
             referenced: false,
-            usages: vec![]
+            usages: vec![],
         }
     }
 
@@ -24,7 +23,7 @@ impl SymbolTracker {
                     panic!("symbol {} already declared", &symbol.name);
                 }
                 self.declared = true;
-            },
+            }
             SymbolUsage::Reference => self.referenced = true,
         }
         self.usages.push(symbol);

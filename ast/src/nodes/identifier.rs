@@ -1,15 +1,16 @@
-use logos::Span;
-use crate::token::Token;
 use lib::parser::parse::Parse;
-use lib::{ first, token };
-use crate::impl_parse;
+use lib::{first, token};
+use logos::Span;
 use serde::{Deserialize, Serialize};
+
+use crate::impl_parse;
+use crate::token::Token;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct IdentifierNode {
     pub value: String,
-    pub span: Span
+    pub span: Span,
 }
 
 impl_parse!(IdentifierNode, {

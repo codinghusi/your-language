@@ -1,12 +1,11 @@
-use crate::builder::state::{State, StateRef};
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::builder::state::{State, StateRef};
 
 #[derive(Debug)]
 pub struct FSM {
-    pub root: StateRef
+    pub root: StateRef,
 }
 
-impl FSM {
-
-}
+impl FSM {}

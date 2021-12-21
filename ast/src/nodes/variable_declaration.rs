@@ -1,18 +1,19 @@
-use crate::nodes::identifier::IdentifierNode;
-use logos::Span;
-use crate::token::Token;
 use lib::parser::parse::Parse;
-use crate::nodes::parser::ParserNode;
-use lib::{ first, token };
-use crate::{impl_parse, braced};
+use lib::{first, token};
+use logos::Span;
 use serde::{Deserialize, Serialize};
+
+use crate::nodes::identifier::IdentifierNode;
+use crate::nodes::parser::ParserNode;
+use crate::token::Token;
+use crate::{braced, impl_parse};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct VariableDeclarationNode {
     name: IdentifierNode,
     parser: ParserNode,
-    span: Span
+    span: Span,
 }
 
 impl_parse!(VariableDeclarationNode, {

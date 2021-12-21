@@ -1,16 +1,17 @@
-use std::ops::Range;
-use super::id_gen::IdGen;
-use std::rc::Rc;
-use std::cell::RefCell;
-use super::tracking_core::{TrackingCore, TrackedCapture};
 use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::ops::Range;
+use std::rc::Rc;
+
+use super::id_gen::IdGen;
+use super::tracking_core::{TrackedCapture, TrackingCore};
 
 type TrackingCoreRef = Rc<RefCell<TrackingCore>>;
 
 #[derive(Clone)]
 pub struct Tracker {
     core: TrackingCoreRef,
-    index: usize
+    index: usize,
 }
 
 impl Tracker {
@@ -21,7 +22,7 @@ impl Tracker {
     pub fn new_with_core(core: TrackingCore) -> Self {
         Self {
             core: Rc::new(RefCell::new(core)),
-            index: 0
+            index: 0,
         }
     }
 
@@ -48,13 +49,16 @@ impl Tracker {
             match capture {
                 TrackedCapture::Struct { key, captures } => TrackedCapture::Struct {
                     key,
-                    captures: captures.into_iter().map(|capture| adjust_offset(offset, capture)).collect()
+                    captures: captures
+                        .into_iter()
+                        .map(|capture| adjust_offset(offset, capture))
+                        .collect(),
                 },
 
                 TrackedCapture::Text { key, range } => TrackedCapture::Text {
                     key,
-                    range: (range.start + offset) .. range.end
-                }
+                    range: (range.start + offset)..range.end,
+                },
             }
         }
 

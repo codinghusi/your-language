@@ -1,18 +1,19 @@
-use crate::path::{Path, Edge, CaptureTracker};
-use std::ops::{RangeFrom, DerefMut, Deref};
-use std::rc::Rc;
 use std::cell::RefCell;
-use std::slice::Iter;
 use std::collections::HashSet;
-use std::hash::Hasher;
 use std::hash::Hash;
-use crate::builder::id_gen::IdGen;
+use std::hash::Hasher;
 use std::hint::unreachable_unchecked;
+use std::ops::{Deref, DerefMut, RangeFrom};
+use std::rc::Rc;
+use std::slice::Iter;
+
+use crate::builder::id_gen::IdGen;
 use crate::builder::tracker::Tracker;
+use crate::path::{CaptureTracker, Edge, Path};
 
 pub enum MergeStatus {
     Added(HashSet<StateRef>),
-    Failed
+    Failed,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,11 +34,13 @@ impl Deref for StateRef {
 }
 
 impl Hash for StateRef {
-    fn hash<H>(&self, state: &mut H) where H: Hasher {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
         self.0.borrow().hash(state)
     }
 }
-
 
 impl Hash for State {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -57,7 +60,7 @@ impl Eq for State {}
 pub struct State {
     pub value: usize,
     pub nodes: Vec<StateRef>,
-    pub transition: char
+    pub transition: char,
 }
 
 impl State {
@@ -66,7 +69,7 @@ impl State {
         StateRef::new(Self {
             value: 0,
             nodes: vec![],
-            transition: '\0'
+            transition: '\0',
         })
     }
 
@@ -77,20 +80,26 @@ impl State {
     }
 
     pub fn get_node_by_transition(&self, transition: &char) -> Option<&StateRef> {
-        self.nodes.iter().find(|node| node.borrow().transition.eq(transition))
+        self.nodes
+            .iter()
+            .find(|node| node.borrow().transition.eq(transition))
     }
 
-    pub fn add_node_by_transition(&mut self, transition: &char, tracker: &Tracker) -> (StateRef, usize) {
+    pub fn add_node_by_transition(
+        &mut self,
+        transition: &char,
+        tracker: &Tracker,
+    ) -> (StateRef, usize) {
         match self.get_node_by_transition(transition) {
             Some(state_ref) => (state_ref.clone(), tracker.current_target_value()),
             None => (
                 self.add_node(Self {
                     value: tracker.current_target_value(),
                     nodes: vec![],
-                    transition: *transition
+                    transition: *transition,
                 }),
-                0
-            )
+                0,
+            ),
         }
     }
 
@@ -98,22 +107,24 @@ impl State {
         Self::merge_items(root, path.items.iter(), tracker)
     }
 
-    fn merge_states_with_path(states: &HashSet<StateRef>, path: &Path, tracker: &mut Tracker) -> MergeStatus {
+    fn merge_states_with_path(
+        states: &HashSet<StateRef>,
+        path: &Path,
+        tracker: &mut Tracker,
+    ) -> MergeStatus {
         let mut failed = false;
         let result: Result<Vec<_>, _> = states
             .iter()
             .map(|state| Self::merge_path(state.clone(), path, &mut tracker.clone()))
-            .map(|status| {
-                match status {
-                    MergeStatus::Added(mut states) => Ok(states.into_iter()),
-                    failed => Err(failed)
-                }
+            .map(|status| match status {
+                MergeStatus::Added(mut states) => Ok(states.into_iter()),
+                failed => Err(failed),
             })
             .collect();
 
         match result {
             Ok(states) => MergeStatus::Added(states.into_iter().flatten().collect()),
-            Err(failed) => failed
+            Err(failed) => failed,
         }
     }
 
@@ -131,32 +142,43 @@ impl State {
                 Edge::Char(transition) => {
                     // FIXME: adjust the target_value!
 
-                    let states = current_states.into_iter()
-                        .map(|mut state| state.borrow_mut().add_node_by_transition(transition, &tracker))
+                    let states = current_states
+                        .into_iter()
+                        .map(|mut state| {
+                            state
+                                .borrow_mut()
+                                .add_node_by_transition(transition, &tracker)
+                        })
                         .map(|(state, _)| state) // follow up of fix me: the _ represents the remainder target_value
                         .collect();
                     MergeStatus::Added(states)
-                },
+                }
 
                 // splits all n states to n*m states, appends each 'n' all 'm' possible paths
                 Edge::OneOf(possible_paths) => {
                     let mut all_ends = HashSet::new();
                     let succeed = possible_paths
                         .iter()
-                        .map(|path| Self::merge_states_with_path(&current_states, path, &mut tracker.clone()))
+                        .map(|path| {
+                            Self::merge_states_with_path(
+                                &current_states,
+                                path,
+                                &mut tracker.clone(),
+                            )
+                        })
                         .all(|mut status| match status {
                             MergeStatus::Added(mut ends) => {
                                 all_ends.extend(ends.into_iter());
                                 true
-                            },
-                            MergeStatus::Failed => false
+                            }
+                            MergeStatus::Failed => false,
                         });
                     if succeed {
                         MergeStatus::Added(all_ends)
                     } else {
                         MergeStatus::Failed
                     }
-                },
+                }
 
                 // splits states into 2*n, one with the optional path in it and one without
                 Edge::Optional(optional_path) => {
@@ -164,18 +186,18 @@ impl State {
                         MergeStatus::Added(mut ends) => {
                             ends.extend(current_states.into_iter());
                             MergeStatus::Added(ends)
-                        },
-                        fail => fail
+                        }
+                        fail => fail,
                     }
-                },
+                }
 
                 Edge::Capture(_) => {
                     unimplemented!()
-                },
+                }
 
                 Edge::Cycle(_) => {
                     unimplemented!()
-                },
+                }
 
                 Edge::Final(_) => {
                     unimplemented!()
@@ -186,17 +208,20 @@ impl State {
 
             match status {
                 MergeStatus::Added(states) => current_states = states,
-                MergeStatus::Failed => panic!("aaah") // FIXME
+                MergeStatus::Failed => panic!("aaah"), // FIXME
             }
         }
 
         // Connecting last states with end state
-        let rest = current_states.into_iter()
-            .map(|mut state| state.borrow_mut().add_node(Self {
-                value: 0,
-                nodes: vec![],
-                transition: '\0'
-            }))
+        let rest = current_states
+            .into_iter()
+            .map(|mut state| {
+                state.borrow_mut().add_node(Self {
+                    value: 0,
+                    nodes: vec![],
+                    transition: '\0',
+                })
+            })
             .collect();
         MergeStatus::Added(rest)
     }
@@ -213,10 +238,13 @@ impl State {
         let mut combinations = vec![];
 
         for node in &self.nodes {
-            combinations.extend(node.borrow().all_combinations().iter().map(|combination|
-                ( format!("{}{}", transition, combination.0), node.borrow().value )))
+            combinations.extend(node.borrow().all_combinations().iter().map(|combination| {
+                (
+                    format!("{}{}", transition, combination.0),
+                    node.borrow().value,
+                )
+            }))
         }
         combinations
     }
 }
-

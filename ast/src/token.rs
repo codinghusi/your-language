@@ -1,40 +1,42 @@
-use logos::Logos;
-use crate::nodes::eater::separator::SeparationEater;
 use lib::parser::buffer::ParseBuffer;
-use lib::parser::into::IntoParseBuffer;
-use node_derive::TokenEnum;
 use lib::parser::err_values::ErrValues;
+use lib::parser::into::IntoParseBuffer;
+use logos::Logos;
+use node_derive::TokenEnum;
+
+use crate::nodes::eater::separator::SeparationEater;
 
 #[derive(Clone, Debug)]
 pub enum Brace {
-    Open, Close
+    Open,
+    Close,
 }
 
 #[derive(Logos, TokenEnum, Clone, Debug)]
 pub enum Token {
-    #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
+    #[regex("[a-zA-Z_][a-zA-Z0-9_]*", | lex | lex.slice().to_string())]
     Identifier(String),
 
-    #[regex("[{}]", |lex| if lex.slice().eq("{") {Brace::Open} else {Brace::Close})]
+    #[regex("[{}]", | lex | if lex.slice().eq("{") {Brace::Open} else {Brace::Close})]
     CurlyBrace(Brace),
 
-    #[regex("[()]", |lex| if lex.slice().eq("(") {Brace::Open} else {Brace::Close})]
+    #[regex("[()]", | lex | if lex.slice().eq("(") {Brace::Open} else {Brace::Close})]
     RoundedBrace(Brace),
 
     #[token("=>")]
     Assign,
 
-    #[regex(r#"/([^/]|\\.)+/"#,  |lex| sliceit(&lex.slice().to_string(), 1, 1))]
+    #[regex(r#"/([^/]|\\.)+/"#, | lex | sliceit(& lex.slice().to_string(), 1, 1))]
     Regex(String),
 
-    #[regex(r"[-~][!>]?>", |lex| SeparationEater::from_raw(lex.slice()))]
+    #[regex(r"[-~][!>]?>", | lex | SeparationEater::from_raw(lex.slice()))]
     Separator(SeparationEater),
 
-    #[regex(r#""([^"])+""#, |lex| sliceit(&lex.slice().to_string(), 1, 1))]
-    #[regex(r#"'([^'])+'"#, |lex| sliceit(&lex.slice().to_string(), 1, 1))]
+    #[regex(r#""([^"])+""#, | lex | sliceit(& lex.slice().to_string(), 1, 1))]
+    #[regex(r#"'([^'])+'"#, | lex | sliceit(& lex.slice().to_string(), 1, 1))]
     String(String),
 
-    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", |lex| sliceit(&lex.slice().to_string(), 0, 1) )]
+    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*):", | lex | sliceit(& lex.slice().to_string(), 0, 1))]
     EaterName(String),
 
     #[token(";")]
@@ -48,7 +50,7 @@ pub enum Token {
 }
 
 fn sliceit(slice: &str, left: usize, right: usize) -> String {
-    slice[left..slice.len()-right].to_string()
+    slice[left..slice.len() - right].to_string()
 }
 
 impl<'source> IntoParseBuffer<'source, Token> for Token {
@@ -56,9 +58,3 @@ impl<'source> IntoParseBuffer<'source, Token> for Token {
         ParseBuffer::from(Self::lexer(&code.clone()))
     }
 }
-
-
-
-
-
-

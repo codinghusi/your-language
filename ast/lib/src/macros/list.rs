@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! list {
     ($buffer:expr, $node:ty $(, $separator:pat)?) => {

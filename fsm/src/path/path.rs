@@ -1,13 +1,12 @@
-use super::{Edge, Capture};
 use crate::path::capture::{CaptureItem, CaptureType};
 
+use super::{Capture, Edge};
 
 pub struct Path {
     pub items: Vec<Edge>,
 }
 
 impl Path {
-
     pub fn new() -> Self {
         Self { items: vec![] }
     }
@@ -37,7 +36,6 @@ impl Path {
         self.one_of(chars.chars().map(|c| Path::new().char(c)).collect())
     }
 
-
     pub fn string(mut self, str: &str) -> Self {
         for c in str.chars() {
             self = self.char(c);
@@ -49,7 +47,7 @@ impl Path {
         self.add(Edge::Capture(CaptureItem {
             ty: CaptureType::Struct,
             key,
-            path
+            path,
         }))
     }
 
@@ -57,7 +55,7 @@ impl Path {
         self.add(Edge::Capture(CaptureItem {
             ty: CaptureType::Text,
             key,
-            path
+            path,
         }))
     }
 

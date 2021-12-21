@@ -3,6 +3,7 @@
 With this descriptive programming language you can design your complete own programming language.
 
 Features it should cover:
+
 * Generation of an Abstract Syntax Tree (AST)
 * Generation of Semantic Graph (resolved references)
 * Easy error handling

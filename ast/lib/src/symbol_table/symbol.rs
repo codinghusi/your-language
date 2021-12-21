@@ -1,7 +1,6 @@
-
 pub enum SymbolUsage {
     Declaration,
-    Reference
+    Reference,
 }
 
 pub struct Symbol {

@@ -1,37 +1,44 @@
-use crate::maybe_unwrap;
-use logos::{ Lexer, Logos };
-use std::marker::PhantomData;
-use std::iter::Peekable;
-use std::vec::IntoIter;
-use crate::parser::{
-    token::ParseToken,
-    parse::Parse,
-    result::Result,
-    annotated::AnnotatedLexi
-};
-use crate::parser::span::Span;
+use logos::{Lexer, Logos};
 use std::fmt::Debug;
+use std::iter::Peekable;
+use std::marker::PhantomData;
+use std::vec::IntoIter;
+
+use crate::maybe_unwrap;
+use crate::parser::span::Span;
+use crate::parser::{annotated::AnnotatedLexi, parse::Parse, result::Result, token::ParseToken};
 
 pub struct ParseBuffer<'source, Token>
-where Token: Logos<'source> + Clone {
+where
+    Token: Logos<'source> + Clone,
+{
     pub lexer: Peekable<IntoIter<ParseToken<Token>>>,
     pub last_span: Option<Span>,
     lifetime_stuff: PhantomData<&'source ()>,
 }
 
 impl<'source, Token> ParseBuffer<'source, Token>
-    where Token: Logos<'source> + Clone + Debug {
+where
+    Token: Logos<'source> + Clone + Debug,
+{
     pub fn from(lexer: Lexer<'source, Token>) -> Self {
         Self {
-            lexer: lexer.annotated().map(|(token, span, slice)| ParseToken::from((token, span, slice))).collect::<Vec<_>>().into_iter().peekable(),
+            lexer: lexer
+                .annotated()
+                .map(|(token, span, slice)| ParseToken::from((token, span, slice)))
+                .collect::<Vec<_>>()
+                .into_iter()
+                .peekable(),
             last_span: None,
-            lifetime_stuff: PhantomData
+            lifetime_stuff: PhantomData,
         }
     }
 
     pub fn parse<G>(&mut self) -> Result<'source, G, Token>
-        where G: Parse<'source, Token> {
-        return G::parse(self)
+    where
+        G: Parse<'source, Token>,
+    {
+        return G::parse(self);
     }
 
     pub fn next(&mut self) -> Option<ParseToken<Token>> {

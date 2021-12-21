@@ -1,15 +1,15 @@
 #![allow(unused, dead_code)]
 
-#[macro_use]
-pub mod token;
-pub mod node_type;
-pub mod nodes;
-pub mod keyword;
-pub mod impl_parse;
-pub mod braced;
 pub extern crate lib;
 pub extern crate node_derive;
 
+#[macro_use]
+pub mod token;
+pub mod braced;
+pub mod impl_parse;
+pub mod keyword;
+pub mod node_type;
+pub mod nodes;
+
 #[cfg(test)]
-mod tests {
-}
+mod tests {}

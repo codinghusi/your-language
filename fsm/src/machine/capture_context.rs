@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use super::capture_mapping::CaptureMapping;
 use super::machine::StateId;
-use std::collections::HashMap;
 
 pub enum CaptureValue {
     Number { state: StateId },

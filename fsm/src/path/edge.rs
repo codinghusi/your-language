@@ -1,6 +1,6 @@
-
-use super::{Path};
 use crate::path::capture::CaptureItem;
+
+use super::Path;
 
 pub enum Edge {
     Char(char),
@@ -8,5 +8,5 @@ pub enum Edge {
     Optional(Path),
     Capture(CaptureItem),
     Cycle(Path),
-    Final(usize)
+    Final(usize),
 }

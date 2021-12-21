@@ -1,11 +1,12 @@
+use std::convert::TryInto;
+use std::rc::Rc;
+
 use crate::builder::id_gen::IdGen;
 use crate::builder::state::{MergeStatus, State};
 use crate::builder::tracker::Tracker;
 use crate::machine::machine::Machine;
 use crate::path::Path;
 use crate::FSM;
-use std::convert::TryInto;
-use std::rc::Rc;
 
 pub struct FSM_Builder {
     paths: Vec<Path>,

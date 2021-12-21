@@ -1,1 +1,1 @@
- - use codespan-reporting for better error messages
+- use codespan-reporting for better error messages

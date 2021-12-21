@@ -1,7 +1,7 @@
-mod edge;
-mod path;
-mod capture;
-
+pub use capture::{Capture, CaptureItem, CaptureTracker, CaptureType};
 pub use edge::Edge;
 pub use path::Path;
-pub use capture::{Capture, CaptureItem, CaptureType, CaptureTracker};
+
+mod capture;
+mod edge;
+mod path;

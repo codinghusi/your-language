@@ -1,17 +1,18 @@
-use crate::nodes::eater::Eater;
 use lib::parser::parse::Parse;
-use crate::token::Token;
+use lib::{first, token};
 use logos::Span;
-use lib::{ first, token };
-use crate::impl_parse;
-use serde::{Deserialize, Serialize};
 use node_derive::NodeEnum;
+use serde::{Deserialize, Serialize};
+
+use crate::impl_parse;
+use crate::nodes::eater::Eater;
+use crate::token::Token;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Whitespace {
     Optional,
     Required,
-    NotAllowed
+    NotAllowed,
 }
 
 // FIXME: Names are too similar (SeparatedEater and SeperatorEater)
@@ -20,7 +21,7 @@ pub enum Whitespace {
 pub struct SeparatedEater {
     separator_before: SeparationEater,
     eater: Eater,
-    span: Span
+    span: Span,
 }
 
 impl_parse!(SeparatedEater, {
@@ -40,7 +41,7 @@ impl_parse!(SeparatedEater, {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SeparationEater {
     whitespace: Whitespace,
-    require_following_eater: bool
+    require_following_eater: bool,
 }
 
 impl SeparationEater {
@@ -48,36 +49,35 @@ impl SeparationEater {
         match raw {
             "->" => Self {
                 whitespace: Whitespace::Optional,
-                require_following_eater: true
+                require_following_eater: true,
             },
 
             "->>" => Self {
                 whitespace: Whitespace::Required,
-                require_following_eater: true
+                require_following_eater: true,
             },
 
             "-!>" => Self {
                 whitespace: Whitespace::NotAllowed,
-                require_following_eater: true
+                require_following_eater: true,
             },
 
             "~>" => Self {
                 whitespace: Whitespace::Optional,
-                require_following_eater: false
+                require_following_eater: false,
             },
 
             "~>>" => Self {
                 whitespace: Whitespace::Required,
-                require_following_eater: false
+                require_following_eater: false,
             },
 
             "~!>" => Self {
                 whitespace: Whitespace::NotAllowed,
-                require_following_eater: false
+                require_following_eater: false,
             },
 
-
-            _ => panic!("{} is not a separator eater", raw)
+            _ => panic!("{} is not a separator eater", raw),
         }
     }
 }

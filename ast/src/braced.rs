@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! braced {
     ($buffer:ident, ty $variant:ident, {$($body:tt)*}) => {

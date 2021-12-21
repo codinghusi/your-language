@@ -1,19 +1,16 @@
+use lib::parser::parse::Parse;
+use lib::{first, list};
 use logos::Span;
-use crate::token::Token;
 use node_derive::NodeEnum;
-use super::definition::{
-    CommentDefinitionNode,
-    EntrypointDefinitionNode,
-    NodeDefinitionNode,
-    NodelessDefinitionNode,
-    WhitespaceDefinitionNode
-};
-use lib::parser::{
-    parse::Parse
-};
-use lib::{ list, first };
-use crate::impl_parse;
 use serde::{Deserialize, Serialize};
+
+use crate::impl_parse;
+use crate::token::Token;
+
+use super::definition::{
+    CommentDefinitionNode, EntrypointDefinitionNode, NodeDefinitionNode, NodelessDefinitionNode,
+    WhitespaceDefinitionNode,
+};
 
 #[derive(NodeEnum, Debug, Serialize, Deserialize)]
 #[serde(tag = "_type")]
@@ -30,7 +27,7 @@ pub enum DocumentItem {
 #[serde(tag = "type")]
 pub struct DocumentNode {
     pub items: Vec<DocumentItem>,
-    span: Span
+    span: Span,
 }
 
 impl_parse!(DocumentNode, {

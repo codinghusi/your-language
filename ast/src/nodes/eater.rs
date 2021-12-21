@@ -1,26 +1,25 @@
+use lib::parser::parse::Parse;
 use logos::Logos;
 use node_derive::NodeEnum;
-
-use crate::token::Token;
-use crate::nodes::eater::naming::{NamedEater, UnnamedEater};
-use crate::nodes::eater::string::StringEater;
-use crate::nodes::eater::regex::RegexEater;
-use crate::nodes::eater::function::FunctionEater;
-use lib::parser::parse::Parse;
-
-
-pub mod naming;
-pub mod string;
-pub mod regex;
-pub mod function;
-pub mod separator;
 use serde::{Deserialize, Serialize};
+
+use crate::nodes::eater::function::FunctionEater;
+use crate::nodes::eater::naming::{NamedEater, UnnamedEater};
+use crate::nodes::eater::regex::RegexEater;
+use crate::nodes::eater::string::StringEater;
+use crate::token::Token;
+
+pub mod function;
+pub mod naming;
+pub mod regex;
+pub mod separator;
+pub mod string;
 
 #[derive(NodeEnum, Debug, Serialize, Deserialize)]
 #[serde(tag = "_type")]
 pub enum Eater {
     Named(NamedEater),
-    Unnamed(UnnamedEater)
+    Unnamed(UnnamedEater),
 }
 
 #[derive(NodeEnum, Debug, Serialize, Deserialize)]
@@ -28,8 +27,11 @@ pub enum Eater {
 pub enum EaterItem {
     String(StringEater),
     Regex(RegexEater),
-    Function(FunctionEater)
+    Function(FunctionEater),
 }
 
 pub trait EaterNode<'source, Token>: Parse<'source, Token>
-where Token: Logos<'source> + Clone { }
+where
+    Token: Logos<'source> + Clone,
+{
+}

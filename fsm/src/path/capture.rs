@@ -1,40 +1,41 @@
-use crate::path::Path;
 use std::ops::Range;
+
+use crate::path::Path;
 
 pub struct CaptureItem {
     pub ty: CaptureType,
     pub key: String,
-    pub path: Path
+    pub path: Path,
 }
 
 pub enum CaptureType {
     Struct,
-    Text
+    Text,
 }
 
 pub struct Capture {
     ty: CaptureType,
     key: String,
-    range: Range<usize>
+    range: Range<usize>,
 }
 
 impl Capture {
     pub fn increment_offset(&mut self, offset: usize) -> &mut Self {
-        self.range = self.range.start + offset .. self.range.end + offset;
+        self.range = self.range.start + offset..self.range.end + offset;
         self
     }
 }
 
 pub struct CaptureTracker {
     pub current_index: usize,
-    pub captures: Vec<Capture>
+    pub captures: Vec<Capture>,
 }
 
 impl CaptureTracker {
     pub fn new() -> Self {
         Self {
             current_index: 0,
-            captures: vec![]
+            captures: vec![],
         }
     }
 
@@ -47,7 +48,7 @@ impl CaptureTracker {
         self.captures.push(Capture {
             ty,
             key,
-            range: self.current_index..self.current_index+length
+            range: self.current_index..self.current_index + length,
         });
         self
     }

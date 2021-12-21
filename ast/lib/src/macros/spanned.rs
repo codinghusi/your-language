@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! spanned {
     ($buffer:expr, {body => {$($body:tt)*}, ($span:ident) => $return:expr}) => {
@@ -11,4 +10,3 @@ macro_rules! spanned {
         }
     };
 }
-

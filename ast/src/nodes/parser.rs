@@ -1,18 +1,19 @@
-use logos::Span;
-use crate::token::Token;
-use crate::nodes::eater::Eater;
 use lib::parser::parse::Parse;
-use crate::nodes::eater::separator::SeparatedEater;
-use lib::{ first, list };
-use crate::impl_parse;
+use lib::{first, list};
+use logos::Span;
 use serde::{Deserialize, Serialize};
+
+use crate::impl_parse;
+use crate::nodes::eater::separator::SeparatedEater;
+use crate::nodes::eater::Eater;
+use crate::token::Token;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct ParserNode {
     first_eater: Eater,
     other_eaters: Vec<SeparatedEater>,
-    span: Span
+    span: Span,
 }
 
 impl_parse!(ParserNode, {

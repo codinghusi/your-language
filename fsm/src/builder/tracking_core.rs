@@ -1,19 +1,13 @@
 use std::ops::Range;
 
 pub enum TrackedCapture {
-    Struct {
-        key: String,
-        captures: Vec<Self>
-    },
-    Text {
-        key: String,
-        range: Range<usize>
-    }
+    Struct { key: String, captures: Vec<Self> },
+    Text { key: String, range: Range<usize> },
 }
 
 pub struct TrackingCore {
     pub target_value: usize,
-    pub captures: Vec<TrackedCapture>
+    pub captures: Vec<TrackedCapture>,
 }
 
 impl TrackingCore {

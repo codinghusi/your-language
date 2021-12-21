@@ -1,16 +1,17 @@
-use logos::Span;
-use crate::token::Token;
-use crate::nodes::eater::EaterNode;
 use lib::parser::parse::Parse;
-use lib::{ first, token };
-use crate::impl_parse;
+use lib::{first, token};
+use logos::Span;
 use serde::{Deserialize, Serialize};
+
+use crate::impl_parse;
+use crate::nodes::eater::EaterNode;
+use crate::token::Token;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub struct RegexEater {
     value: String,
-    span: Span
+    span: Span,
 }
 
 impl_parse!(RegexEater, {
@@ -25,4 +26,4 @@ impl_parse!(RegexEater, {
     }
 });
 
-impl<'source> EaterNode<'source, Token> for RegexEater { }
+impl<'source> EaterNode<'source, Token> for RegexEater {}

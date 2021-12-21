@@ -1,12 +1,16 @@
-use logos::{Span, Logos, Lexer};
+use logos::{Lexer, Logos, Span};
 
 pub struct AnnotatedLexer<'source, Token>
-where Token: Logos<'source> {
-    lexer: Lexer<'source, Token>
+where
+    Token: Logos<'source>,
+{
+    lexer: Lexer<'source, Token>,
 }
 
 impl<'source, Token> Iterator for AnnotatedLexer<'source, Token>
-where Token: Logos<'source> {
+where
+    Token: Logos<'source>,
+{
     type Item = (Token, Span, String);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -18,12 +22,16 @@ where Token: Logos<'source> {
 }
 
 pub trait AnnotatedLexi<'source, Token>
-where Token: Logos<'source> {
+where
+    Token: Logos<'source>,
+{
     fn annotated(self) -> AnnotatedLexer<'source, Token>;
 }
 
 impl<'source, Token> AnnotatedLexi<'source, Token> for Lexer<'source, Token>
-where Token: Logos<'source> {
+where
+    Token: Logos<'source>,
+{
     fn annotated(self) -> AnnotatedLexer<'source, Token> {
         AnnotatedLexer { lexer: self }
     }

@@ -1,14 +1,11 @@
-
 #[derive(Clone)]
 pub struct IdGen {
-    last_index: usize
+    last_index: usize,
 }
 
 impl IdGen {
     pub fn new() -> Self {
-        Self {
-            last_index: 0
-        }
+        Self { last_index: 0 }
     }
 
     pub fn next(&mut self) -> usize {
