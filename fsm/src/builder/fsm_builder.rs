@@ -28,12 +28,7 @@ impl FSM_Builder {
     }
 
     pub fn build_machine(&self) -> Result<Machine, String> {
-        let mut machine = Machine::empty();
-        let root = *machine.get_root_state();
-        for path in &self.paths {
-            machine.insert_path_at(&root, path, &mut Context::new())?;
-        }
-        Ok(machine)
+        Machine::from_paths(&self.paths)
     }
 
     pub fn build(&self) -> FSM {

@@ -11,17 +11,34 @@ use fsm::path::Path;
 use fsm::{FSM_Builder, FSM};
 
 fn main() {
+    let builder = FSM_Builder::from(vec![Path::new().cycle(
+        Path::new().capture(
+            String::from("documents"),
+            Path::new()
+                .string("struct ")
+                .cycle(
+                    Path::new().capture_text(
+                        String::from("name"),
+                        Path::new()
+                            .one_of_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"),
+                    ),
+                )
+                .char(';')
+                .optional(Path::new().cycle(Path::new().one_of_chars(" \t\n"))),
+        ),
+    )]);
+
     // following should parse: "function my_fn() {;;;;;}"
     // and output: { "fn_name": "my_fn" }
-    let builder = FSM_Builder::from(vec![Path::new()
-        .string("function ")
-        .cycle(Path::new().capture_text(
-            String::from("fn_name"),
-            Path::new().one_of_chars("abcdefghijklmnopqrstuvwxyz_"),
-        ))
-        .string("() {")
-        .cycle(Path::new().char(';'))
-        .char('}')]);
+    // let builder = FSM_Builder::from(vec![Path::new()
+    //     .string("function ")
+    //     .cycle(Path::new().capture_text(
+    //         String::from("fn_name"),
+    //         Path::new().one_of_chars("abcdefghijklmnopqrstuvwxyz_"),
+    //     ))
+    //     .string("() {")
+    //     .cycle(Path::new().char(';'))
+    //     .char('}')]);
 
     // let builder = FSM_Builder::from(
     //     vec![
@@ -40,10 +57,13 @@ fn main() {
     // println!("{:?}", machine.all_combinations());
     // println!("{}", machine.export_xstatejs());
 
-    println!(
-        "{:?}",
-        machine.interpret_slow("function abc() {;;;;;}").unwrap()
-    );
+    // let parse_result = machine.parse_slow("function abc() {;;;;;}").unwrap();
+    let parse_result = machine.parse_slow("struct Foo; struct Bar;").unwrap();
+    println!("{:?}", parse_result);
+    let json = machine.result_to_json(parse_result);
+    println!("{}", json);
+
+    // println!("{:?}", parse_result);
 
     // let builder = FSM_Builder::from(
     //     vec![

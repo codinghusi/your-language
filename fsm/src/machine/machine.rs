@@ -20,7 +20,7 @@ pub struct CaptureEnds {
 #[derive(Debug, Clone)]
 pub enum CaptureValue {
     String(CaptureId),
-    List(CaptureId),
+    List(Box<CaptureValue>),
     Map(HashMap<String, CaptureValue>),
 }
 
@@ -40,23 +40,23 @@ impl Context {
         }
     }
 
-    pub fn with_target_state(&self, state: StateId) -> Self {
-        Context {
-            items: self.items.clone(),
-            is_in_cycle: self.is_in_cycle,
-            target_state: Some(state),
+    /*pub fn with_target_state(&self, state: StateId) -> Self {
+            Context {
+                items: self.items.clone(),
+                is_in_cycle: self.is_in_cycle,
+                target_state: Some(state),
+            }
         }
-    }
 
-    pub fn without_target_state(&self) -> Self {
-        Context {
-            items: self.items.clone(),
-            is_in_cycle: self.is_in_cycle,
-            target_state: None,
+        pub fn without_target_state(&self) -> Self {
+            Context {
+                items: self.items.clone(),
+                is_in_cycle: self.is_in_cycle,
+                target_state: None,
+            }
         }
-    }
-
-    pub fn without_items(&self) -> Self {
+    */
+    pub fn clone_without_items(&self) -> Self {
         Context {
             items: HashMap::new(),
             is_in_cycle: self.is_in_cycle,
@@ -81,6 +81,7 @@ pub struct Machine {
     capture_count: usize,
     // tracks how many caputures are used. Used to generate auto-increment ids for captures
     capture_table: HashMap<StateId, CaptureEnds>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
+    capture_structure_root: HashMap<String, CaptureValue>,
 }
 
 // Note: First state is the error state
@@ -94,16 +95,23 @@ impl Machine {
 
             capture_table: HashMap::new(),
             capture_count: 0,
+            capture_structure_root: HashMap::new(),
         };
         new.add_state(); // add the root state. Currently always with id: 1
         new
     }
 
-    pub fn from_path(path: &Path) -> Self {
+    pub fn from_path(path: Path) -> Result<Self, String> {
+        Self::from_paths(&vec![path])
+    }
+
+    pub fn from_paths(paths: &Vec<Path>) -> Result<Self, String> {
         let mut machine = Self::empty();
-        let state = machine.add_state();
-        machine.insert_path_at(&state, path, &mut Context::new());
-        machine
+        let state = machine.get_root_state();
+        let mut context = Context::new();
+        machine.insert_paths_at_states(vec![*state], paths, &mut context)?;
+        machine.capture_structure_root = context.items;
+        Ok(machine)
     }
 
     // FIXME: this is deprecated, we have multiple start_states. Consider forcing only one starting state
@@ -196,6 +204,46 @@ impl Machine {
         self.insert_path_at_states(vec![*state], path, context)
     }
 
+    pub fn insert_paths_at_states(
+        &mut self,
+        states: Vec<usize>,
+        paths: &Vec<Path>,
+        context: &mut Context,
+    ) -> Result<Vec<usize>, String> {
+        Ok({
+            let mut paths = paths.iter();
+            if let Some(first) = paths.next() {
+                // Step 1: insert the first path
+                let mut other_lose_ends = vec![];
+                let mut first_lose_ends =
+                    self.insert_path_at_states(states.clone(), first, context)?;
+
+                // Step 2: Grab any end state, into those all other paths will be merged into
+                let closing = first_lose_ends
+                    .first()
+                    .ok_or("it's illegal to provide an empty path!".to_string())?; // TODO: add this note to the documentation later on
+
+                // Step 3: insert all path with end state as the same as the first path
+                let previous_target_state = context.target_state;
+                context.target_state = Some(*closing);
+
+                for path in paths {
+                    other_lose_ends.append(&mut self.insert_path_at_states(
+                        states.clone(),
+                        path,
+                        context,
+                    )?);
+                }
+                first_lose_ends.append(&mut other_lose_ends);
+
+                context.target_state = previous_target_state;
+                first_lose_ends
+            } else {
+                vec![]
+            }
+        })
+    }
+
     pub fn insert_edge_at_states(
         &mut self,
         states: Vec<usize>,
@@ -225,35 +273,7 @@ impl Machine {
                     vec![]
                 }
             }
-            OneOf(paths) => {
-                let mut paths = paths.iter();
-                if let Some(first) = paths.next() {
-                    // Step 1: insert the first path
-                    let mut other_lose_ends = vec![];
-                    let mut first_lose_ends =
-                        self.insert_path_at_states(states.clone(), first, context)?;
-
-                    // Step 2: Grab any end state, into those all other paths will be merged into
-                    let closing = first_lose_ends
-                        .first()
-                        .ok_or("it's illegal to provide an empty path!".to_string())?; // TODO: add this note to the documentation later on
-
-                    // Step 3: insert all path with end state as the same as the first path
-                    let mut new_context = context.with_target_state(*closing);
-
-                    for path in paths {
-                        other_lose_ends.append(&mut self.insert_path_at_states(
-                            states.clone(),
-                            path,
-                            &mut new_context,
-                        )?);
-                    }
-                    first_lose_ends.append(&mut other_lose_ends);
-                    first_lose_ends
-                } else {
-                    vec![]
-                }
-            }
+            OneOf(paths) => self.insert_paths_at_states(states, paths, context)?,
             Optional(path) => {
                 // Paths with 'path' and paths without 'path' (skipped)
                 let mut lose_ends = self.insert_path_at_states(states.clone(), path, context)?;
@@ -273,6 +293,8 @@ impl Machine {
                         self.apply_transitions(begin, end);
                     })
                 });
+
+                context.is_in_cycle = true;
 
                 lose_ends
             }
@@ -295,19 +317,30 @@ impl Machine {
                     }
 
                     // setup mapping
-                    context
-                        .items
-                        .insert(String::from(&item.key), CaptureValue::String(capture));
+                    let value = CaptureValue::String(capture);
+                    if context.is_in_cycle {
+                        context
+                            .items
+                            .insert(String::from(&item.key), CaptureValue::List(Box::new(value)));
+                    } else {
+                        context.items.insert(String::from(&item.key), value);
+                    }
+
+                    println!("{:?}", context.items);
 
                     lose_ends
                 }
                 CaptureType::Struct => {
-                    let mut new_context = context.without_items();
+                    let mut new_context = context.clone_without_items();
                     let ret = self.insert_path_at_states(states, &item.path, &mut new_context)?;
-                    context.items.insert(
-                        String::from(&item.key),
-                        CaptureValue::Map(new_context.items),
-                    );
+                    let value = CaptureValue::Map(new_context.items);
+                    if context.is_in_cycle {
+                        context
+                            .items
+                            .insert(String::from(&item.key), CaptureValue::List(Box::new(value)));
+                    } else {
+                        context.items.insert(String::from(&item.key), value);
+                    }
                     ret
                 }
             },
@@ -328,19 +361,18 @@ impl Machine {
             return Ok(states); // TODO: could also throw an error that path.items are empty
         }
         let mut current_states = states;
+        let prev_target_state = context.target_state;
+        context.target_state = None;
         for edge in path.items.iter().take(path.items.len() - 1) {
-            current_states = self.insert_edge_at_states(
-                current_states,
-                &edge,
-                &mut context.without_target_state(),
-            )?;
+            current_states = self.insert_edge_at_states(current_states, &edge, context)?;
         }
         let last = path.items.last().unwrap(); // TODO: this .unwrap() could be done unchecked
+        context.target_state = prev_target_state;
         current_states = self.insert_edge_at_states(current_states, last, context)?;
         Ok(current_states)
     }
 
-    pub fn interpret_slow(&self, text: &str) -> Result<Vec<(CaptureId, String)>, String> {
+    pub fn parse_slow(&self, text: &str) -> Result<Vec<(CaptureId, String)>, String> {
         let mut captures = vec![];
         let mut pending_captures: HashSet<(usize, StateId, CaptureId)> = HashSet::new();
         let mut current_state = self.start_state;
@@ -399,6 +431,87 @@ impl Machine {
         Ok(captures)
     }
 
+    pub fn result_to_json(&self, mut result: Vec<(CaptureId, String)>) -> String {
+        result.sort_by(|a, b| a.0.cmp(&b.0));
+        self.result_to_json_intern(&mut result.into_iter(), &self.capture_structure_root)
+    }
+
+    fn result_to_json_intern(
+        &self,
+        result: &mut std::vec::IntoIter<(CaptureId, String)>,
+        entrypoint: &HashMap<String, CaptureValue>,
+    ) -> String {
+        let mut ret = String::new();
+        let mut separator = "";
+        ret += "{";
+        let mut next = result.next();
+        for (key, capture_value) in entrypoint {
+            let value = self.result_to_json_value(result, next, capture_value);
+            if let Some(json) = value.0 {
+                ret += separator;
+                ret += &format!("\"{}\":{}", key, json);
+                separator = ",";
+                next = value.1;
+            } else {
+                break;
+            }
+        }
+        ret += "}";
+        ret
+    }
+
+    fn result_to_json_value(
+        &self,
+        result: &mut std::vec::IntoIter<(CaptureId, String)>,
+        mut next: Option<(CaptureId, String)>,
+        capture_value: &CaptureValue,
+    ) -> (Option<String>, Option<(CaptureId, String)>) {
+        if let Some(mut item) = next {
+            let ret = match capture_value {
+                CaptureValue::Map(map) => {
+                    format!("{}", self.result_to_json_intern(result, &map))
+                }
+                CaptureValue::List(capture_value) => {
+                    println!("handling a list");
+                    let mut list = vec![];
+                    let mut inner_item = item.clone();
+                    loop {
+                        let (value, next) =
+                            self.result_to_json_value(result, Some(inner_item), &(**capture_value));
+                        if let Some(v) = value {
+                            list.push(v);
+                        } else {
+                            break;
+                        }
+                        if let Some(i) = next {
+                            inner_item = i;
+                        } else {
+                            break;
+                        }
+                    }
+                    format!(
+                        "[{}]",
+                        list.iter()
+                            .map(|item| format!("\"{}\"", item))
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    )
+                }
+                CaptureValue::String(ref_id) => {
+                    if *ref_id == item.0 {
+                        next = result.next();
+                        format!("\"{}\"", item.1)
+                    } else {
+                        format!("null")
+                    }
+                }
+            };
+            (Some(ret), Some(item))
+        } else {
+            (None, None)
+        }
+    }
+
     fn apply_transitions(&mut self, source: &usize, destination: &usize) -> Result<(), String> {
         let source_table = self.get_transition(source)?.clone();
 
@@ -414,39 +527,6 @@ impl Machine {
 
     pub fn is_ready(&self) -> bool {
         self.state_count > 1
-    }
-
-    pub fn all_combinations(&self) -> Vec<String> {
-        self.all_combinations_internal(self.get_root_state(), &mut HashSet::new())
-    }
-
-    // not working well with cycles
-    fn all_combinations_internal(
-        &self,
-        state: &usize,
-        visited: &mut HashSet<usize>,
-    ) -> Vec<String> {
-        if visited.contains(state) {
-            return vec![];
-        }
-        visited.insert(*state);
-        let mut result: Vec<_> = self
-            .get_transition(state)
-            .unwrap()
-            .iter()
-            .enumerate()
-            .filter(|(c, destination)| **destination != ERROR_STATE)
-            .flat_map(|(c, destination)| {
-                self.all_combinations_internal(destination, visited)
-                    .iter()
-                    .map(|str| format!("{}{}", c as u8 as char, str))
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        if self.final_states.contains(state) {
-            result.push("".to_string());
-        }
-        result
     }
 
     pub fn export_xstatejs(&self) -> String {
