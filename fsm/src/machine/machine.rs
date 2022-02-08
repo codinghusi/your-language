@@ -1,6 +1,7 @@
 // use super::capture_mapping::{ItemValue, MappingResult};
 use crate::path::{CaptureType, Edge, Path};
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
 // TODO: state 0 needs to be an error catching state
@@ -11,10 +12,11 @@ pub type TransitionFunction = [usize; 255];
 pub type StateId = usize;
 pub type CaptureId = usize;
 
-#[derive(Debug)]
-pub struct CaptureEnds {
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct CapturePayload {
     pub capture_id: CaptureId,
     pub end_states: Vec<StateId>,
+    pub is_list: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -22,6 +24,44 @@ pub enum CaptureValue {
     String(CaptureId),
     List(Box<CaptureValue>),
     Map(HashMap<String, CaptureValue>),
+}
+
+pub enum CapturedType {
+    Value(CapturedValue),
+    List(Vec<CapturedValue>),
+}
+
+impl fmt::Debug for CapturedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CapturedType::Value(value) => write!(f, "{:?}", value),
+            CapturedType::List(list) => write!(
+                f,
+                "[{}]",
+                list.iter()
+                    .map(|v| format!("{:?}", v))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Hash, PartialEq, Eq)]
+struct PendingCapture {
+    payload: CapturePayload,
+    start_index: usize,
+}
+
+pub struct CapturedValue {
+    capture_id: CaptureId,
+    value: String,
+}
+
+impl fmt::Debug for CapturedValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\"{}\"", self.value)
+    }
 }
 
 #[derive(Clone)]
@@ -80,7 +120,7 @@ pub struct Machine {
     // capture_mapping: CaptureMapping,  // mapping will be implemented later // for mapping the key-value/flat structures of captures into a tree-structure
     capture_count: usize,
     // tracks how many caputures are used. Used to generate auto-increment ids for captures
-    capture_table: HashMap<StateId, CaptureEnds>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
+    capture_table: HashMap<StateId, CapturePayload>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
     capture_structure_root: HashMap<String, CaptureValue>,
 }
 
@@ -287,14 +327,14 @@ impl Machine {
                 states
             }
             Cycle(path) => {
+                context.is_in_cycle = true;
+
                 let lose_ends = self.insert_path_at_states(states.clone(), path, context)?;
                 states.iter().for_each(|begin| {
                     lose_ends.iter().for_each(|end| {
                         self.apply_transitions(begin, end);
                     })
                 });
-
-                context.is_in_cycle = true;
 
                 lose_ends
             }
@@ -308,9 +348,10 @@ impl Machine {
                         let mut ends = self.insert_path_at(&start, &item.path, context)?;
                         self.capture_table.insert(
                             start,
-                            CaptureEnds {
+                            CapturePayload {
                                 capture_id: capture,
                                 end_states: ends.clone(),
+                                is_list: context.is_in_cycle,
                             },
                         );
                         lose_ends.append(&mut ends);
@@ -372,40 +413,70 @@ impl Machine {
         Ok(current_states)
     }
 
-    pub fn parse_slow(&self, text: &str) -> Result<Vec<(CaptureId, String)>, String> {
-        let mut captures = vec![];
-        let mut pending_captures: HashSet<(usize, StateId, CaptureId)> = HashSet::new();
+    pub fn parse_slow(&self, text: &str) -> Result<HashMap<CaptureId, CapturedType>, String> {
+        println!("{:?}", self.capture_table);
+        fn insert_value(
+            captures: &mut HashMap<CaptureId, CapturedType>,
+            record: PendingCapture,
+            end_index: usize,
+            text: &str,
+        ) {
+            let CapturePayload {
+                capture_id,
+                end_states,
+                is_list,
+            } = record.payload;
+
+            let value = CapturedValue {
+                capture_id,
+                value: text[record.start_index..end_index].to_string(),
+            };
+
+            if record.payload.is_list {
+                if let Some(CapturedType::List(list)) = captures.get_mut(&capture_id) {
+                    list.push(value);
+                } else {
+                    captures.insert(capture_id, CapturedType::List(vec![value]));
+                }
+            } else {
+                captures.insert(capture_id, CapturedType::Value(value));
+            }
+        }
+
+        type StartIndex = usize;
+        let mut captures = HashMap::new();
+        let mut pending_captures: HashSet<PendingCapture> = HashSet::new();
         let mut current_state = self.start_state;
 
         for (i, c) in text.chars().enumerate() {
-            // stop capture when needed
-            let to_be_stopped = pending_captures
-                .iter()
-                .filter(|(_, end, _)| current_state > *end);
+            // -- Stop pending captures when ready --
+            // Step 1: get captures that finished, and the rest
+            let (to_be_stopped, _pending_captures) =
+                pending_captures.into_iter().partition(|pending| {
+                    pending
+                        .payload
+                        .end_states
+                        .iter()
+                        .any(|end| *end > current_state)
+                }) as (HashSet<_>, HashSet<_>);
+
+            // Step 2: stop them
             for record in to_be_stopped.clone() {
-                let (start_index, end_state, capture_id) = record;
-                captures.push((*capture_id, String::from(&text[*start_index..i - 1])));
-            }
-            // remove 'em from the list
-            pending_captures = pending_captures
-                .into_iter()
-                .filter(|(_, end, _)| current_state <= *end)
-                .collect();
-
-            // start capture when needed
-            if let Some(marker) = self.capture_table.get(&current_state) {
-                let CaptureEnds {
-                    capture_id,
-                    end_states,
-                } = marker;
-                for state in end_states {
-                    pending_captures.insert((i, *state, *capture_id));
-                }
-                println!("start: {:?}", pending_captures);
+                insert_value(&mut captures, record, i - 1, text);
             }
 
-            // get next state
-            // println!("transition: {:?}", self.get_transition(&current_state).unwrap());
+            // Step 3: update the list to remaining pendings
+            pending_captures = _pending_captures;
+
+            // -- Start capture when needed --
+            if let Some(payload) = self.capture_table.get(&current_state) {
+                pending_captures.insert(PendingCapture {
+                    payload: (*payload).clone(),
+                    start_index: i,
+                });
+            }
+
+            // pull the next state
             if let Ok(state) = self.get_transition_at(&current_state, c) {
                 if *state != ERROR_STATE {
                     current_state = *state;
@@ -416,99 +487,64 @@ impl Machine {
             return Err(format!("invalid character '{}'", c));
         }
 
-        // collect the missed captures
-        for record in pending_captures
-            .iter()
-            .filter(|(_, end, _)| current_state >= *end)
-        {
-            let (start_index, end_state, capture_id) = record;
-            captures.push((
-                *capture_id,
-                String::from(&text[*start_index..text.len() - 1]),
-            ));
+        // -- Collect the remaining pending captures, that finished just now --
+        for record in pending_captures.iter().filter(|pending| {
+            pending
+                .payload
+                .end_states
+                .iter()
+                .any(|end| current_state >= *end)
+        }) {
+            insert_value(&mut captures, record.clone(), text.len() - 1, text);
         }
 
         Ok(captures)
     }
 
-    pub fn result_to_json(&self, mut result: Vec<(CaptureId, String)>) -> String {
-        result.sort_by(|a, b| a.0.cmp(&b.0));
-        self.result_to_json_intern(&mut result.into_iter(), &self.capture_structure_root)
+    pub fn result_to_json(&self, result: &HashMap<CaptureId, CapturedType>) -> String {
+        self.result_to_json_intern(result, &self.capture_structure_root)
     }
 
     fn result_to_json_intern(
         &self,
-        result: &mut std::vec::IntoIter<(CaptureId, String)>,
+        result: &HashMap<CaptureId, CapturedType>,
         entrypoint: &HashMap<String, CaptureValue>,
     ) -> String {
         let mut ret = String::new();
         let mut separator = "";
         ret += "{";
-        let mut next = result.next();
-        for (key, capture_value) in entrypoint {
-            let value = self.result_to_json_value(result, next, capture_value);
-            if let Some(json) = value.0 {
-                ret += separator;
-                ret += &format!("\"{}\":{}", key, json);
-                separator = ",";
-                next = value.1;
-            } else {
-                break;
-            }
-        }
+        ret += &entrypoint
+            .iter()
+            .map(|(key, value)| {
+                format!(
+                    "\"{}\": {}",
+                    key,
+                    self.result_to_json_value(result, value)
+                        .unwrap_or_else(|| "null".to_string())
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
         ret += "}";
         ret
     }
 
     fn result_to_json_value(
         &self,
-        result: &mut std::vec::IntoIter<(CaptureId, String)>,
-        mut next: Option<(CaptureId, String)>,
+        result: &HashMap<CaptureId, CapturedType>,
         capture_value: &CaptureValue,
-    ) -> (Option<String>, Option<(CaptureId, String)>) {
-        if let Some(mut item) = next {
-            let ret = match capture_value {
-                CaptureValue::Map(map) => {
-                    format!("{}", self.result_to_json_intern(result, &map))
+    ) -> Option<String> {
+        match capture_value {
+            CaptureValue::String(value) => {
+                if let Some(value) = result.get(value) {
+                    Some(format!("{:?}", value))
+                } else {
+                    None
                 }
-                CaptureValue::List(capture_value) => {
-                    println!("handling a list");
-                    let mut list = vec![];
-                    let mut inner_item = item.clone();
-                    loop {
-                        let (value, next) =
-                            self.result_to_json_value(result, Some(inner_item), &(**capture_value));
-                        if let Some(v) = value {
-                            list.push(v);
-                        } else {
-                            break;
-                        }
-                        if let Some(i) = next {
-                            inner_item = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    format!(
-                        "[{}]",
-                        list.iter()
-                            .map(|item| format!("\"{}\"", item))
-                            .collect::<Vec<_>>()
-                            .join(",")
-                    )
-                }
-                CaptureValue::String(ref_id) => {
-                    if *ref_id == item.0 {
-                        next = result.next();
-                        format!("\"{}\"", item.1)
-                    } else {
-                        format!("null")
-                    }
-                }
-            };
-            (Some(ret), Some(item))
-        } else {
-            (None, None)
+            }
+            // FIXME: nesting not working
+            CaptureValue::List(list) => self.result_to_json_value(result, &*list),
+            CaptureValue::Map(map) => Some(format!("{}", self.result_to_json_intern(result, map))),
         }
     }
 

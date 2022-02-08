@@ -60,7 +60,7 @@ fn main() {
     // let parse_result = machine.parse_slow("function abc() {;;;;;}").unwrap();
     let parse_result = machine.parse_slow("struct Foo; struct Bar;").unwrap();
     println!("{:?}", parse_result);
-    let json = machine.result_to_json(parse_result);
+    let json = machine.result_to_json(&parse_result);
     println!("{}", json);
 
     // println!("{:?}", parse_result);
