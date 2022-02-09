@@ -494,6 +494,9 @@ impl Machine {
             insert_captured_value(&mut captures, record.clone(), text.len() - 1, text);
         }
 
+        println!("Capture Table: {:?}", self.capture_table);
+        println!("Result: {:?}", captures);
+
         Ok(captures)
     }
 
@@ -523,7 +526,7 @@ impl Machine {
                 } else {
                     "null".to_string()
                 };
-                format!("\"{}\": \"{}\"", key, value)
+                format!("\"{}\": {}", key, value)
             })
             .collect::<Vec<_>>()
             .join(",");
@@ -553,7 +556,7 @@ impl Machine {
                 {
                     if c_id == capture_id {
                         result.next();
-                        Some(value.to_string())
+                        Some(format!("\"{}\"", value))
                     } else {
                         None
                     }
@@ -573,7 +576,7 @@ impl Machine {
                         break;
                     }
                 }
-                Some(format!("{:?}", list))
+                Some(format!("[{}]", list.join(", ")))
             }
 
             CaptureValue::Map(map) => self.result_to_json_intern(result, map),
