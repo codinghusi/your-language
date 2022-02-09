@@ -2,6 +2,7 @@
 use crate::path::{CaptureType, Edge, Path};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::iter::Peekable;
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
 // TODO: state 0 needs to be an error catching state
@@ -53,16 +54,17 @@ struct PendingCapture {
     start_index: usize,
 }
 
+#[derive(Debug)]
 pub struct CapturedValue {
     capture_id: CaptureId,
     value: String,
 }
 
-impl fmt::Debug for CapturedValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\"{}\"", self.value)
-    }
-}
+// impl fmt::Debug for CapturedValue {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "\"{}\"", self.value)
+//     }
+// }
 
 #[derive(Clone)]
 pub struct Context {
@@ -336,6 +338,8 @@ impl Machine {
                     })
                 });
 
+                context.is_in_cycle = false;
+
                 lose_ends
             }
             Capture(item) => match item.ty {
@@ -367,21 +371,22 @@ impl Machine {
                         context.items.insert(String::from(&item.key), value);
                     }
 
-                    println!("{:?}", context.items);
-
                     lose_ends
                 }
                 CaptureType::Struct => {
                     let mut new_context = context.clone_without_items();
+                    let is_in_cycle = context.is_in_cycle;
+                    new_context.is_in_cycle = false;
                     let ret = self.insert_path_at_states(states, &item.path, &mut new_context)?;
                     let value = CaptureValue::Map(new_context.items);
-                    if context.is_in_cycle {
+                    if is_in_cycle {
                         context
                             .items
                             .insert(String::from(&item.key), CaptureValue::List(Box::new(value)));
                     } else {
                         context.items.insert(String::from(&item.key), value);
                     }
+
                     ret
                 }
             },
@@ -413,10 +418,9 @@ impl Machine {
         Ok(current_states)
     }
 
-    pub fn parse_slow(&self, text: &str) -> Result<HashMap<CaptureId, CapturedType>, String> {
-        println!("{:?}", self.capture_table);
-        fn insert_value(
-            captures: &mut HashMap<CaptureId, CapturedType>,
+    pub fn parse_slow(&self, text: &str) -> Result<Vec<CapturedValue>, String> {
+        fn insert_captured_value(
+            captures: &mut Vec<CapturedValue>,
             record: PendingCapture,
             end_index: usize,
             text: &str,
@@ -432,19 +436,11 @@ impl Machine {
                 value: text[record.start_index..end_index].to_string(),
             };
 
-            if record.payload.is_list {
-                if let Some(CapturedType::List(list)) = captures.get_mut(&capture_id) {
-                    list.push(value);
-                } else {
-                    captures.insert(capture_id, CapturedType::List(vec![value]));
-                }
-            } else {
-                captures.insert(capture_id, CapturedType::Value(value));
-            }
+            captures.push(value);
         }
 
         type StartIndex = usize;
-        let mut captures = HashMap::new();
+        let mut captures = vec![];
         let mut pending_captures: HashSet<PendingCapture> = HashSet::new();
         let mut current_state = self.start_state;
 
@@ -462,7 +458,7 @@ impl Machine {
 
             // Step 2: stop them
             for record in to_be_stopped.clone() {
-                insert_value(&mut captures, record, i - 1, text);
+                insert_captured_value(&mut captures, record, i - 1, text);
             }
 
             // Step 3: update the list to remaining pendings
@@ -495,56 +491,92 @@ impl Machine {
                 .iter()
                 .any(|end| current_state >= *end)
         }) {
-            insert_value(&mut captures, record.clone(), text.len() - 1, text);
+            insert_captured_value(&mut captures, record.clone(), text.len() - 1, text);
         }
 
         Ok(captures)
     }
 
-    pub fn result_to_json(&self, result: &HashMap<CaptureId, CapturedType>) -> String {
-        self.result_to_json_intern(result, &self.capture_structure_root)
+    pub fn result_to_json(&self, result: &Vec<CapturedValue>) -> String {
+        self.result_to_json_intern(&mut result.iter().peekable(), &self.capture_structure_root)
+            .unwrap_or_else(|| "null".to_string())
     }
 
-    fn result_to_json_intern(
+    fn result_to_json_intern<'a, I>(
         &self,
-        result: &HashMap<CaptureId, CapturedType>,
+        result: &mut Peekable<I>,
         entrypoint: &HashMap<String, CaptureValue>,
-    ) -> String {
+    ) -> Option<String>
+    where
+        I: Iterator<Item = &'a CapturedValue> + 'a,
+    {
+        let mut is_null = true;
         let mut ret = String::new();
-        let mut separator = "";
         ret += "{";
         ret += &entrypoint
             .iter()
             .map(|(key, value)| {
-                format!(
-                    "\"{}\": {}",
-                    key,
-                    self.result_to_json_value(result, value)
-                        .unwrap_or_else(|| "null".to_string())
-                )
+                let raw = self.result_to_json_value(result, value);
+                let value = if let Some(value) = raw {
+                    is_null = false;
+                    value
+                } else {
+                    "null".to_string()
+                };
+                format!("\"{}\": \"{}\"", key, value)
             })
             .collect::<Vec<_>>()
             .join(",");
         ret += "}";
-        ret
+
+        if is_null {
+            None
+        } else {
+            Some(ret)
+        }
     }
 
-    fn result_to_json_value(
+    fn result_to_json_value<'a, I>(
         &self,
-        result: &HashMap<CaptureId, CapturedType>,
+        result: &mut Peekable<I>,
         capture_value: &CaptureValue,
-    ) -> Option<String> {
+    ) -> Option<String>
+    where
+        I: Iterator<Item = &'a CapturedValue> + 'a,
+    {
         match capture_value {
-            CaptureValue::String(value) => {
-                if let Some(value) = result.get(value) {
-                    Some(format!("{:?}", value))
+            CaptureValue::String(capture_id) => {
+                if let Some(CapturedValue {
+                    capture_id: c_id,
+                    value,
+                }) = result.peek()
+                {
+                    if c_id == capture_id {
+                        result.next();
+                        Some(value.to_string())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
             }
+
             // FIXME: nesting not working
-            CaptureValue::List(list) => self.result_to_json_value(result, &*list),
-            CaptureValue::Map(map) => Some(format!("{}", self.result_to_json_intern(result, map))),
+            CaptureValue::List(list_item) => {
+                let mut list = vec![];
+                loop {
+                    let value = self.result_to_json_value(result, &*list_item);
+                    if let Some(value) = value {
+                        list.push(value);
+                    } else {
+                        break;
+                    }
+                }
+                Some(format!("{:?}", list))
+            }
+
+            CaptureValue::Map(map) => self.result_to_json_intern(result, map),
         }
     }
 
@@ -575,7 +607,17 @@ impl Machine {
                     .iter()
                     .enumerate()
                     .filter(|(c, target)| **target != ERROR_STATE)
-                    .map(|(c, target)| format!("'{}': '{}'", c as u8 as char, target))
+                    .map(|(c, target)| {
+                        format!(
+                            "'{}': '{}'",
+                            match c as u8 as char {
+                                '\n' => "\\n".to_string(),
+                                '\r' => "\\r".to_string(),
+                                c => c.to_string(),
+                            },
+                            target
+                        )
+                    })
                     .collect::<Vec<_>>()
                     .join(", ");
                 let stateType = if self.final_states.contains(state) {

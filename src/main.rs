@@ -11,18 +11,15 @@ use fsm::path::Path;
 use fsm::{FSM_Builder, FSM};
 
 fn main() {
+    let letter = Path::new().one_of_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_");
+    let identifier = Path::new().cycle(letter);
+
     let builder = FSM_Builder::from(vec![Path::new().cycle(
         Path::new().capture(
             String::from("documents"),
             Path::new()
                 .string("struct ")
-                .cycle(
-                    Path::new().capture_text(
-                        String::from("name"),
-                        Path::new()
-                            .one_of_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"),
-                    ),
-                )
+                .capture_text(String::from("name"), identifier)
                 .char(';')
                 .optional(Path::new().cycle(Path::new().one_of_chars(" \t\n"))),
         ),
@@ -59,10 +56,10 @@ fn main() {
 
     // let parse_result = machine.parse_slow("function abc() {;;;;;}").unwrap();
     let parse_result = machine.parse_slow("struct Foo; struct Bar;").unwrap();
-    println!("{:?}", parse_result);
+    println!("parse result: {:?}", parse_result);
     let json = machine.result_to_json(&parse_result);
-    println!("{}", json);
-
+    println!("json: {}", json);
+    // println!("{}", machine.export_xstatejs());
     // println!("{:?}", parse_result);
 
     // let builder = FSM_Builder::from(
