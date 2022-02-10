@@ -19,7 +19,7 @@ impl Hash for CapturePayload {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CaptureValue {
     String(CaptureId),
     List(Box<CaptureValue>),
@@ -32,7 +32,7 @@ pub struct PendingCapture {
     pub start_index: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CapturedValue {
     pub capture_id: CaptureId,
     pub value: String,

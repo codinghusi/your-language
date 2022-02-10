@@ -11,14 +11,16 @@ mod export_xstate_js;
 mod insertions;
 mod other;
 mod parsing;
-mod tests;
 mod to_json;
 mod transitions_and_captures;
+
+#[cfg(test)]
+mod tests;
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
 // TODO: state 0 needs to be an error catching state
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Machine {
     state_count: usize,
     // Q: set of all states (actually only the count of them: 0..states)

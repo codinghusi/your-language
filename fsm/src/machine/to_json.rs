@@ -74,8 +74,6 @@ impl Machine {
             CaptureValue::List(list_item) => {
                 let mut list = vec![];
                 loop {
-                    println!("list item: {:?}", *list_item);
-                    println!("result: {:?}", result.peek());
                     let value = self.result_to_json_value(result, &*list_item);
                     if let Some(value) = value {
                         list.push(value);

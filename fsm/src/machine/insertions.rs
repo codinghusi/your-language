@@ -196,3 +196,41 @@ impl Machine {
         Ok(current_states)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn table(transitions: &[(char, usize)]) -> TransitionFunction {
+        let mut transition_table = [0usize; 255];
+        for t in transitions {
+            transition_table[t.0 as usize] = t.1;
+        }
+        transition_table
+    }
+
+    // that shit is complicated, lol
+    // #[test]
+    fn string() -> Result<(), String> {
+        let machine = Machine::from_path(Path::new().string("abc").end())?;
+        let mut final_states = HashSet::new();
+        final_states.insert(4);
+        let mut transition_table = HashMap::new();
+        transition_table.insert(1, table(&[('a', 2)]));
+        transition_table.insert(2, table(&[('b', 3)]));
+        transition_table.insert(3, table(&[('c', 4)]));
+        assert_eq!(
+            machine,
+            Machine {
+                state_count: 4,
+                start_state: 1,
+                final_states,
+                transition_table,
+                capture_count: 0,
+                capture_table: Default::default(),
+                capture_structure_root: Default::default(),
+            },
+        );
+        Ok(())
+    }
+}

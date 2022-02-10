@@ -81,9 +81,271 @@ impl Machine {
             insert_captured_value(&mut captures, record.clone(), text.len() - 1, text);
         }
 
-        println!("Capture Table: {:?}", self.capture_table);
-        println!("Result: {:?}", captures);
-
         Ok(captures)
+    }
+}
+
+// --- Tests ---
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn err<T>(msg: &str) -> Result<T, String> {
+        Err(msg.to_string())
+    }
+
+    #[test]
+    fn string() -> Result<(), String> {
+        let machine = Machine::from_path(Path::new().string("Hello").end())?;
+
+        assert_eq!(machine.parse_slow("Hello"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("World"), err("invalid character 'W'"));
+        assert_eq!(machine.parse_slow("Hell"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("Helloo"), err("invalid character 'o'"));
+        assert_eq!(machine.parse_slow("ello"), err("invalid character 'e'"));
+        assert_eq!(machine.parse_slow("Hellu"), err("invalid character 'u'"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn one_of() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .one_of(vec![
+                    Path::new().string("Hello"),
+                    Path::new().string("Hellu"),
+                    Path::new().string("World"),
+                    Path::new().string("Wurld"),
+                ])
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow("Hello"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("Hellu"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("World"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("Wurld"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("Wurl"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("Wullo"), err("invalid character 'l'"));
+        Ok(())
+    }
+
+    #[test]
+    fn cycle() -> Result<(), String> {
+        let machine = Machine::from_path(Path::new().cycle(Path::new().string("abc")).end())?;
+        assert_eq!(machine.parse_slow(""), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("a"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("ab"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("ac"), err("invalid character 'c'"));
+        assert_eq!(machine.parse_slow("abc"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("abcd"), err("invalid character 'd'"));
+        assert_eq!(machine.parse_slow("abcc"), err("invalid character 'c'"));
+        assert_eq!(machine.parse_slow("abcab"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("abcabc"), Ok(vec![]));
+        Ok(())
+    }
+
+    #[test]
+    fn optional() -> Result<(), String> {
+        let machine = Machine::from_path(Path::new().optional(Path::new().string("abc")).end())?;
+        assert_eq!(machine.parse_slow(""), Ok(vec![]));
+        assert_eq!(machine.parse_slow("a"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("ab"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("abc"), Ok(vec![]));
+        Ok(())
+    }
+
+    #[test]
+    fn optional_and_cycle() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .cycle(Path::new().string("def"))
+                .optional(Path::new().cycle(Path::new().string("abc")))
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow(""), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("abc"), err("invalid character 'a'"));
+        assert_eq!(machine.parse_slow("def"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("defdef"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("defdefa"), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("defdefabc"), Ok(vec![]));
+        assert_eq!(machine.parse_slow("defdefabcabc"), Ok(vec![]));
+
+        // TODO: this is failing:
+        assert_eq!(
+            machine.parse_slow("defdefabcabcdef"),
+            err("invalid character 'd'")
+        );
+        Ok(())
+    }
+
+    // -- Captures
+
+    #[test]
+    fn capture_string2() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .string("Hello, ")
+                .capture_text(String::from("who"), Path::new().string("World"))
+                .string("!")
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow(""), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("Hello, "), err("unexpected end of line"));
+        assert_eq!(
+            machine.parse_slow("Hello, World"),
+            err("unexpected end of line")
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, World "),
+            err("invalid character ' '")
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, World!"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "World".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, World! "),
+            err("invalid character ' '")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn capture_string1() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .string("Hello, ")
+                .capture_text(String::from("who"), Path::new().string("World"))
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow(""), err("unexpected end of line"));
+        assert_eq!(machine.parse_slow("Hello, "), err("unexpected end of line"));
+        assert_eq!(
+            machine.parse_slow("Hello, World"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "World".to_string()
+            }])
+        );
+        assert_eq!(
+            machine.parse_slow("Hello, World "),
+            err("invalid character ' '")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn capture_one_of() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .string("Hello, ")
+                .capture_text(
+                    String::from("who"),
+                    Path::new().one_of(vec![
+                        Path::new().string("World"),
+                        Path::new().string("Mum"),
+                        Path::new().string("Dad"),
+                    ]),
+                )
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow("Hello, "), err("unexpected end of line"));
+        assert_eq!(
+            machine.parse_slow("Hello, World"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "World".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Mum"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "Mum".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Dad"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "Dad".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Foo"),
+            err("invalid character 'F'")
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, World "),
+            err("invalid character ' '")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn capture_cycle() -> Result<(), String> {
+        let machine = Machine::from_path(
+            Path::new()
+                .string("Hello, ")
+                .capture_text(
+                    String::from("who"),
+                    Path::new().cycle(
+                        Path::new()
+                            .one_of_chars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                    ),
+                )
+                .end(),
+        )?;
+        assert_eq!(machine.parse_slow("Hello, "), err("unexpected end of line"));
+        assert_eq!(
+            machine.parse_slow("Hello, World"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "World".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Mum"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "Mum".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Dad"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "Dad".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, Foo"),
+            Ok(vec![CapturedValue {
+                capture_id: 0,
+                value: "Foo".to_string()
+            }])
+        );
+
+        assert_eq!(
+            machine.parse_slow("Hello, World "),
+            err("invalid character ' '")
+        );
+        Ok(())
     }
 }
