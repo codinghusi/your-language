@@ -6,7 +6,7 @@
 // use ast::nodes::document::DocumentNode;
 // use logos::Logos;
 
-use fsm::machine::machine::Machine;
+use fsm::machine::Machine;
 use fsm::path::Path;
 
 fn main() {

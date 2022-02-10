@@ -1,8 +1,7 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use super::types::*;
+use super::definitions::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CapturePayload {
@@ -25,27 +24,6 @@ pub enum CaptureValue {
     String(CaptureId),
     List(Box<CaptureValue>),
     Map(HashMap<String, CaptureValue>),
-}
-
-pub enum CapturedType {
-    Value(CapturedValue),
-    List(Vec<CapturedValue>),
-}
-
-impl fmt::Debug for CapturedType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CapturedType::Value(value) => write!(f, "{:?}", value),
-            CapturedType::List(list) => write!(
-                f,
-                "[{}]",
-                list.iter()
-                    .map(|v| format!("{:?}", v))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ),
-        }
-    }
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]
