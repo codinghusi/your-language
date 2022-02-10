@@ -8,5 +8,5 @@ pub enum Edge {
     Optional(Path),
     Capture(CaptureItem),
     Cycle(Path),
-    Final(usize),
+    Final,
 }

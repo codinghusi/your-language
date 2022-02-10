@@ -71,7 +71,7 @@ impl Path {
         self.add(Edge::Cycle(path))
     }
 
-    pub fn end(mut self, value: usize) -> Self {
-        self.add(Edge::Final(value))
+    pub fn end(mut self) -> Self {
+        self.add(Edge::Final)
     }
 }

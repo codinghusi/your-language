@@ -30,20 +30,4 @@ impl FSM_Builder {
     pub fn build_machine(&self) -> Result<Machine, String> {
         Machine::from_paths(&self.paths)
     }
-
-    pub fn build(&self) -> FSM {
-        let mut root = State::new_root();
-        let mut ids = IdGen::new();
-        let mut tracker = Tracker::new();
-        self.paths
-            .iter()
-            .map(|path| State::merge_path(root.clone(), path, &mut tracker.clone()))
-            .for_each(|status| {
-                match status {
-                    MergeStatus::Failed => panic!("building failed..."), // TODO: make this more proper into a Result<>
-                    _ => (),
-                }
-            });
-        FSM { root }
-    }
 }

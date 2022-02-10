@@ -199,7 +199,7 @@ impl State {
                     unimplemented!()
                 }
 
-                Edge::Final(_) => {
+                Edge::Final => {
                     unimplemented!()
                 }
             };

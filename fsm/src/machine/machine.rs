@@ -86,22 +86,6 @@ impl Context {
         }
     }
 
-    /*pub fn with_target_state(&self, state: StateId) -> Self {
-            Context {
-                items: self.items.clone(),
-                is_in_cycle: self.is_in_cycle,
-                target_state: Some(state),
-            }
-        }
-
-        pub fn without_target_state(&self) -> Self {
-            Context {
-                items: self.items.clone(),
-                is_in_cycle: self.is_in_cycle,
-                target_state: None,
-            }
-        }
-    */
     pub fn clone_without_items(&self) -> Self {
         Context {
             items: HashMap::new(),
@@ -326,7 +310,7 @@ impl Machine {
                 lose_ends.append(&mut states.clone());
                 lose_ends
             }
-            Final(value) => {
+            Final => {
                 states.clone().into_iter().for_each(|state| {
                     self.final_states.insert(state);
                 });
@@ -486,6 +470,10 @@ impl Machine {
             }
 
             return Err(format!("invalid character '{}'", c));
+        }
+
+        if !self.final_states.contains(&current_state) {
+            return Err("unexpected end of line".to_string());
         }
 
         // -- Collect the remaining pending captures, that finished just now --
