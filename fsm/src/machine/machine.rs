@@ -450,8 +450,6 @@ impl Machine {
 
         for (i, c) in text.chars().enumerate() {
             // -- Stop pending captures when ready --
-            // Debug
-            println!("parsing char {} with index {}", c, i);
 
             // Step 1: get captures that finished, and the rest
             let (to_be_stopped, _pending_captures) =
