@@ -70,12 +70,6 @@ pub struct CapturedValue {
     value: String,
 }
 
-// impl fmt::Debug for CapturedValue {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "\"{}\"", self.value)
-//     }
-// }
-
 #[derive(Clone)]
 pub struct Context {
     pub items: HashMap<String, CaptureValue>,
@@ -456,6 +450,9 @@ impl Machine {
 
         for (i, c) in text.chars().enumerate() {
             // -- Stop pending captures when ready --
+            // Debug
+            println!("parsing char {} with index {}", c, i);
+
             // Step 1: get captures that finished, and the rest
             let (to_be_stopped, _pending_captures) =
                 pending_captures.into_iter().partition(|pending| {
@@ -463,7 +460,7 @@ impl Machine {
                         .payload
                         .end_states
                         .iter()
-                        .any(|end| *end > current_state)
+                        .any(|end_state| current_state > *end_state)
                 }) as (HashSet<_>, HashSet<_>);
 
             // Step 2: stop them
@@ -624,8 +621,9 @@ impl Machine {
                         format!(
                             "'{}': '{}'",
                             match c as u8 as char {
-                                '\n' => "\\n".to_string(),
+                                '\n' => "⤶".to_string(),
                                 '\r' => "\\r".to_string(),
+                                ' ' => "␣".to_string(),
                                 c => c.to_string(),
                             },
                             target

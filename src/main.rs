@@ -55,7 +55,7 @@ fn main() {
     // println!("{}", machine.export_xstatejs());
 
     // let parse_result = machine.parse_slow("function abc() {;;;;;}").unwrap();
-    let parse_result = machine.parse_slow("struct Foo; struct Bar;").unwrap();
+    let parse_result = machine.parse_slow("struct Foo; struct Bar;    ").unwrap();
     println!("parse result: {:?}", parse_result);
     let json = machine.result_to_json(&parse_result);
     println!("json: {}", json);
