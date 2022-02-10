@@ -2,6 +2,7 @@
 use crate::path::{CaptureType, Edge, Path};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::iter::Peekable;
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
@@ -13,11 +14,20 @@ pub type TransitionFunction = [usize; 255];
 pub type StateId = usize;
 pub type CaptureId = usize;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CapturePayload {
     pub capture_id: CaptureId,
-    pub end_states: Vec<StateId>,
+    pub end_states: HashSet<StateId>,
     pub is_list: bool,
+}
+
+impl Hash for CapturePayload {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.capture_id.hash(state);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -354,7 +364,7 @@ impl Machine {
                             start,
                             CapturePayload {
                                 capture_id: capture,
-                                end_states: ends.clone(),
+                                end_states: ends.clone().into_iter().collect(),
                                 is_list: context.is_in_cycle,
                             },
                         );
