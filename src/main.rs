@@ -12,7 +12,7 @@ use fsm::path::Path;
 fn main() {
     // let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
     let letters = "abc";
-    let digits = "0123456789";
+    let _digits = "0123456789";
     // let identifier = Path::new()
     //     .one_of_chars(letters)
     //     .optional(Path::new().cycle(Path::new().one_of_chars(&format!("{}{}", letters, digits))));

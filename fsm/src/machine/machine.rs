@@ -1,11 +1,11 @@
+use std::collections::{HashMap, HashSet};
+use std::iter::Peekable;
+
+use crate::path::{CaptureType, Edge, Path};
+
 use super::capture_helpers::*;
 use super::context::Context;
 use super::types::*;
-use crate::path::{CaptureType, Edge, Path};
-use std::collections::{HashMap, HashSet};
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::iter::Peekable;
 
 // Note: a state is only a unique id (number counting from 0 to usize::max_value)
 // TODO: state 0 needs to be an error catching state
@@ -27,7 +27,8 @@ pub struct Machine {
     // capture_mapping: CaptureMapping,  // mapping will be implemented later // for mapping the key-value/flat structures of captures into a tree-structure
     capture_count: usize,
     // tracks how many caputures are used. Used to generate auto-increment ids for captures
-    capture_table: HashMap<StateId, CapturePayload>, // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
+    capture_table: HashMap<StateId, CapturePayload>,
+    // <start_id, (end_ids, capture_id)> // connects different states with captures, provides a fast way to know which characters need to be capatured
     capture_structure_root: HashMap<String, CaptureValue>,
 }
 
@@ -54,9 +55,9 @@ impl Machine {
 
     pub fn from_paths(paths: &Vec<Path>) -> Result<Self, String> {
         let mut machine = Self::empty();
-        let state = machine.get_root_state();
+        let state = *machine.get_root_state();
         let mut context = Context::new();
-        machine.insert_paths_at_states(vec![*state], paths, &mut context)?;
+        machine.insert_paths_at_states(vec![state], paths, &mut context)?;
         machine.capture_structure_root = context.items;
         Ok(machine)
     }
@@ -237,11 +238,11 @@ impl Machine {
                 context.is_in_cycle = true;
 
                 let lose_ends = self.insert_path_at_states(states.clone(), path, context)?;
-                states.iter().for_each(|begin| {
-                    lose_ends.iter().for_each(|end| {
-                        self.apply_transitions(begin, end);
-                    })
-                });
+                for begin in &states {
+                    for end in &lose_ends {
+                        self.apply_transitions(begin, end)?;
+                    }
+                }
 
                 context.is_in_cycle = false;
 
@@ -332,8 +333,8 @@ impl Machine {
         ) {
             let CapturePayload {
                 capture_id,
-                end_states,
-                is_list,
+                end_states: _,
+                is_list: _,
             } = record.payload;
 
             let value = CapturedValue {
@@ -344,7 +345,6 @@ impl Machine {
             captures.push(value);
         }
 
-        type StartIndex = usize;
         let mut captures = vec![];
         let mut pending_captures: HashSet<PendingCapture> = HashSet::new();
         let mut current_state = self.start_state;
@@ -457,11 +457,9 @@ impl Machine {
     where
         I: Iterator<Item = &'a CapturedValue> + 'a,
     {
-        let peek = if let Some(value) = result.peek() {
-            value
-        } else {
+        if let None = result.peek() {
             return None;
-        };
+        }
         match capture_value {
             CaptureValue::String(capture_id) => {
                 if let Some(CapturedValue {
@@ -506,7 +504,7 @@ impl Machine {
         source_table
             .iter()
             .enumerate()
-            .filter(|(c, target)| **target != ERROR_STATE)
+            .filter(|(_, target)| **target != ERROR_STATE)
             .map(|(c, target)| self.set_transition(destination, c as u8 as char, *target))
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -526,7 +524,7 @@ impl Machine {
                 let transitions = func
                     .iter()
                     .enumerate()
-                    .filter(|(c, target)| **target != ERROR_STATE)
+                    .filter(|(_, target)| **target != ERROR_STATE)
                     .map(|(c, target)| {
                         format!(
                             "'{}': '{}'",
@@ -542,14 +540,14 @@ impl Machine {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
-                let stateType = if self.final_states.contains(state) {
+                let state_type = if self.final_states.contains(state) {
                     "type: 'final'"
                 } else {
                     ""
                 };
                 format!(
                     "\t'{}': {{ on: {{ {} }}, {} }}",
-                    state, transitions, stateType
+                    state, transitions, state_type
                 )
             })
             .collect::<Vec<_>>()

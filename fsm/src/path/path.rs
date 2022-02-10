@@ -1,6 +1,6 @@
 use crate::path::capture::{CaptureItem, CaptureType};
 
-use super::{Capture, Edge};
+use super::Edge;
 
 #[derive(Clone)]
 pub struct Path {
@@ -21,7 +21,7 @@ impl Path {
         self
     }
 
-    pub fn char(mut self, char: char) -> Self {
+    pub fn char(self, char: char) -> Self {
         self.add(Edge::Char(char))
     }
 
@@ -30,11 +30,11 @@ impl Path {
         self
     }
 
-    pub fn one_of(mut self, paths: Vec<Path>) -> Self {
+    pub fn one_of(self, paths: Vec<Path>) -> Self {
         self.add(Edge::OneOf(paths))
     }
 
-    pub fn one_of_chars(mut self, chars: &str) -> Self {
+    pub fn one_of_chars(self, chars: &str) -> Self {
         self.one_of(chars.chars().map(|c| Path::new().char(c)).collect())
     }
 
@@ -45,7 +45,7 @@ impl Path {
         self
     }
 
-    pub fn capture(mut self, key: String, path: Path) -> Self {
+    pub fn capture(self, key: String, path: Path) -> Self {
         self.add(Edge::Capture(CaptureItem {
             ty: CaptureType::Struct,
             key,
@@ -53,7 +53,7 @@ impl Path {
         }))
     }
 
-    pub fn capture_text(mut self, key: String, path: Path) -> Self {
+    pub fn capture_text(self, key: String, path: Path) -> Self {
         self.add(Edge::Capture(CaptureItem {
             ty: CaptureType::Text,
             key,
@@ -61,19 +61,19 @@ impl Path {
         }))
     }
 
-    pub fn optional(mut self, path: Path) -> Self {
+    pub fn optional(self, path: Path) -> Self {
         self.add(Edge::Optional(path))
     }
 
-    pub fn optional_string(mut self, str: &str) -> Self {
+    pub fn optional_string(self, str: &str) -> Self {
         self.optional(Path::new().string(str))
     }
 
-    pub fn cycle(mut self, path: Path) -> Self {
+    pub fn cycle(self, path: Path) -> Self {
         self.add(Edge::Cycle(path))
     }
 
-    pub fn end(mut self) -> Self {
+    pub fn end(self) -> Self {
         self.add(Edge::Final)
     }
 }

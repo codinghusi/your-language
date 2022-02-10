@@ -1,7 +1,8 @@
-use super::types::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::hash::{Hash, Hasher};
+
+use super::types::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CapturePayload {

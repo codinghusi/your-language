@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use super::capture_helpers::*;
 use super::types::*;
-use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct Context {
