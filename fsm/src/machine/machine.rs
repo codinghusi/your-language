@@ -1,4 +1,6 @@
-// use super::capture_mapping::{ItemValue, MappingResult};
+use super::capture_helpers::*;
+use super::context::Context;
+use super::types::*;
 use crate::path::{CaptureType, Edge, Path};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -9,91 +11,6 @@ use std::iter::Peekable;
 // TODO: state 0 needs to be an error catching state
 
 const ERROR_STATE: usize = 0;
-
-pub type TransitionFunction = [usize; 255];
-pub type StateId = usize;
-pub type CaptureId = usize;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CapturePayload {
-    pub capture_id: CaptureId,
-    pub end_states: HashSet<StateId>,
-    pub is_list: bool,
-}
-
-impl Hash for CapturePayload {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: Hasher,
-    {
-        self.capture_id.hash(state);
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum CaptureValue {
-    String(CaptureId),
-    List(Box<CaptureValue>),
-    Map(HashMap<String, CaptureValue>),
-}
-
-pub enum CapturedType {
-    Value(CapturedValue),
-    List(Vec<CapturedValue>),
-}
-
-impl fmt::Debug for CapturedType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CapturedType::Value(value) => write!(f, "{:?}", value),
-            CapturedType::List(list) => write!(
-                f,
-                "[{}]",
-                list.iter()
-                    .map(|v| format!("{:?}", v))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ),
-        }
-    }
-}
-
-#[derive(Clone, Hash, PartialEq, Eq)]
-struct PendingCapture {
-    payload: CapturePayload,
-    start_index: usize,
-}
-
-#[derive(Debug)]
-pub struct CapturedValue {
-    capture_id: CaptureId,
-    value: String,
-}
-
-#[derive(Clone)]
-pub struct Context {
-    pub items: HashMap<String, CaptureValue>,
-    pub is_in_cycle: bool,
-    pub target_state: Option<StateId>,
-}
-
-impl Context {
-    pub fn new() -> Self {
-        Context {
-            items: HashMap::new(),
-            is_in_cycle: false,
-            target_state: None,
-        }
-    }
-
-    pub fn clone_without_items(&self) -> Self {
-        Context {
-            items: HashMap::new(),
-            is_in_cycle: self.is_in_cycle,
-            target_state: self.target_state,
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Machine {
@@ -540,6 +457,11 @@ impl Machine {
     where
         I: Iterator<Item = &'a CapturedValue> + 'a,
     {
+        let peek = if let Some(value) = result.peek() {
+            value
+        } else {
+            return None;
+        };
         match capture_value {
             CaptureValue::String(capture_id) => {
                 if let Some(CapturedValue {
@@ -562,6 +484,8 @@ impl Machine {
             CaptureValue::List(list_item) => {
                 let mut list = vec![];
                 loop {
+                    println!("list item: {:?}", *list_item);
+                    println!("result: {:?}", result.peek());
                     let value = self.result_to_json_value(result, &*list_item);
                     if let Some(value) = value {
                         list.push(value);
@@ -609,6 +533,7 @@ impl Machine {
                             match c as u8 as char {
                                 '\n' => "⤶".to_string(),
                                 '\r' => "\\r".to_string(),
+                                '\t' => "↹".to_string(),
                                 ' ' => "␣".to_string(),
                                 c => c.to_string(),
                             },

@@ -2,6 +2,7 @@ use crate::path::capture::{CaptureItem, CaptureType};
 
 use super::{Capture, Edge};
 
+#[derive(Clone)]
 pub struct Path {
     pub items: Vec<Edge>,
 }
@@ -24,8 +25,9 @@ impl Path {
         self.add(Edge::Char(char))
     }
 
-    pub fn append(mut self, elements: Vec<Edge>) -> Self {
-        self.append(elements)
+    pub fn then(mut self, mut path: Path) -> Self {
+        self.items.append(&mut path.items);
+        self
     }
 
     pub fn one_of(mut self, paths: Vec<Path>) -> Self {

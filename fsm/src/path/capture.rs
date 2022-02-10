@@ -2,12 +2,14 @@ use std::ops::Range;
 
 use crate::path::Path;
 
+#[derive(Clone)]
 pub struct CaptureItem {
     pub ty: CaptureType,
     pub key: String,
     pub path: Path,
 }
 
+#[derive(Clone)]
 pub enum CaptureType {
     Struct,
     Text,
